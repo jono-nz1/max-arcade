@@ -143,6 +143,15 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--accent); ou
 .howto b { font-family: var(--f-display); font-weight: 600; }
 .howto small { color: var(--muted); font-size: 12.5px; }
 
+/* ---------- haptics check ---------- */
+.hc-real { display: flex; align-items: center; justify-content: space-between; background: var(--bg); border-radius: 14px; padding: 10px 14px; font-family: var(--f-display); font-weight: 600; }
+.hc-real input { transform: scale(1.3); }
+.hc-list { display: grid; gap: 6px; }
+.hc-row { display: grid; grid-template-columns: 1fr auto auto; gap: 8px; align-items: center; text-align: left; padding: 4px 4px 4px 12px; border-radius: 14px; background: var(--bg); }
+.hc-row.on { box-shadow: inset 0 0 0 2px var(--accent); }
+.hc-row .btn { padding: 8px 12px; font-size: 14px; }
+.hc-note { font-size: 13px; }
+
 /* ---------- add friend ---------- */
 .player.add { border: 2.5px dashed var(--line); background: transparent; box-shadow: none; }
 .player.add .dot { background: var(--line); color: var(--ink); font-size: 20px; }
@@ -449,7 +458,7 @@ table.fast tr:last-child td { border-bottom: 0; }
         <button class="btn" id="scoresBtn">Scores</button>
       </div>
     </div>
-    <div class="ver" id="ver">Tucker Arcade · v1.14</div>
+    <div class="ver" id="ver">Tucker Arcade · v1.15</div>
   </section>
 
   <!-- GAME -->
@@ -1056,7 +1065,7 @@ const Store = {
     try { d = JSON.parse(localStorage.getItem(STORE_KEY) || 'null'); } catch (e) {}
     if (!d) d = {};
     d.player = d.player || 'Max';
-    d.settings = Object.assign({ sound: true, haptics: true, autoX: false, theme: 'auto', dev: false }, d.settings || {});
+    d.settings = Object.assign({ sound: true, haptics: true, autoX: false, theme: 'auto', hapticMethod: 'B', dev: false }, d.settings || {});
     if (!d.settings.v2) { d.settings.autoX = false; d.settings.v2 = true; }
     d.players = d.players || {};
     d.guests = d.guests || [];
@@ -1183,23 +1192,43 @@ const Sound = (() => {
 
 /* ================= haptics ================= */
 const Haptic = (() => {
-  // iPhone Safari has no vibration API. Clicking a hidden iOS switch control gives a system tick,
-  // but only while iOS considers a real tap to be happening, so ticks requested mid-touch are
-  // queued and released from the touchend handler.
-  let label = null, inTouch = false, queued = 0;
+  // iPhone Safari has no vibration API. Clicking a hidden iOS switch control gives a system tick.
+  // There are a few known ways to do that and phones differ, so the method is selectable
+  // (Settings > Haptics > Test). Ticks requested mid-touch are released from touchend,
+  // which iOS treats as a real tap.
+  let inTouch = false, queued = 0, nested = null, linked = null;
   const canVibrate = typeof navigator.vibrate === 'function';
-  function el() {
-    if (label && label.isConnected) return label;
-    label = document.createElement('label'); label.className = 'hidden-haptic'; label.setAttribute('aria-hidden', 'true');
+  const hideCss = 'position:fixed;left:0;bottom:0;width:1px;height:1px;opacity:0.01;pointer-events:none;overflow:hidden;z-index:-1';
+  function getNested() {
+    if (nested && nested.isConnected) return nested;
+    nested = document.createElement('label'); nested.setAttribute('aria-hidden', 'true'); nested.style.cssText = 'position:fixed;left:-200px;top:0;width:1px;height:1px;overflow:hidden;opacity:0';
     const i = document.createElement('input'); i.type = 'checkbox'; i.setAttribute('switch', ''); i.tabIndex = -1;
-    label.appendChild(i); document.body.appendChild(label); return label;
+    nested.appendChild(i); document.body.appendChild(nested); return nested;
   }
-  function fire() { try { el().click(); } catch (e) {} }
+  function getLinked() {
+    if (linked && linked.label.isConnected) return linked;
+    const input = document.createElement('input'); input.type = 'checkbox'; input.setAttribute('switch', ''); input.id = 'hapticSwitch'; input.tabIndex = -1;
+    input.style.cssText = hideCss; input.setAttribute('aria-hidden', 'true');
+    const label = document.createElement('label'); label.htmlFor = 'hapticSwitch'; label.style.cssText = hideCss; label.setAttribute('aria-hidden', 'true');
+    document.body.appendChild(input); document.body.appendChild(label);
+    linked = { input, label }; return linked;
+  }
+  const METHODS = {
+    A: () => getNested().click(),
+    B: () => getLinked().label.click(),
+    C: () => getLinked().input.click(),
+    D: () => {
+      const l = document.createElement('label'); l.setAttribute('aria-hidden', 'true'); l.style.display = 'none';
+      const i = document.createElement('input'); i.type = 'checkbox'; i.setAttribute('switch', '');
+      l.appendChild(i); document.head.appendChild(l); l.click(); document.head.removeChild(l);
+    }
+  };
+  function fire(m) { try { METHODS[m || S().hapticMethod || 'B'](); } catch (e) {} }
   document.addEventListener('touchstart', () => { inTouch = true; }, { capture: true, passive: true });
   function flush() {
     inTouch = false;
     const n = Math.min(queued, 3); queued = 0;
-    for (let k = 0; k < n; k++) { if (k === 0) fire(); else setTimeout(fire, k * 90); }
+    for (let k = 0; k < n; k++) { if (k === 0) fire(); else setTimeout(() => fire(), k * 90); }
   }
   document.addEventListener('touchend', flush, { capture: true, passive: true });
   document.addEventListener('touchcancel', flush, { capture: true, passive: true });
@@ -1207,9 +1236,9 @@ const Haptic = (() => {
     if (!S().haptics) return;
     if (canVibrate) { const pat = []; for (let k = 0; k < n; k++) { pat.push(n > 1 ? 22 : 10); if (k < n - 1) pat.push(70); } try { navigator.vibrate(n > 1 ? pat : 10); } catch (e) {} return; }
     if (inTouch) { queued = Math.max(queued, n); return; }
-    fire(); for (let k = 1; k < n; k++) setTimeout(fire, k * 90);
+    fire(); for (let k = 1; k < n; k++) setTimeout(() => fire(), k * 90);
   }
-  return { tick: () => buzz(1), light: () => buzz(1), error: () => buzz(2), success: () => buzz(3), heavy: () => buzz(2) };
+  return { tick: () => buzz(1), light: () => buzz(1), error: () => buzz(2), success: () => buzz(3), heavy: () => buzz(2), test: m => fire(m), canVibrate };
 })();
 
 /* ================= puzzle supply (worker + cache) ================= */
@@ -1431,7 +1460,7 @@ $('scoresBtn').onclick = () => { Sound.unlock(); Sound.ui(); Haptic.tick(); show
 $('settingsBtn').onclick = () => { Sound.unlock(); Sound.ui(); Haptic.tick(); show('settings'); };
 let logoTaps = 0, logoTimer = 0;
 $('ver').onclick = () => { logoTaps++; clearTimeout(logoTimer); logoTimer = setTimeout(() => logoTaps = 0, 1200);
-  if (logoTaps >= 5) { S().dev = !S().dev; Store.save(); logoTaps = 0; $('ver').textContent = 'Tucker Arcade · v1.14' + (S().dev ? ' · test mode' : ''); Haptic.success(); } };
+  if (logoTaps >= 5) { S().dev = !S().dev; Store.save(); logoTaps = 0; $('ver').textContent = 'Tucker Arcade · v1.15' + (S().dev ? ' · test mode' : ''); Haptic.success(); } };
 // blink on home
 $('homeCat').innerHTML = nibSVG();
 document.addEventListener('pointermove', e => { if (!$('home').hidden) Nib.lookAt($('homeCat').firstChild, e.clientX, e.clientY, 900); });
@@ -1482,6 +1511,28 @@ function renderScores() {
   $('fastTable').innerHTML = html;
 }
 
+// haptics check: try each way of triggering the iPhone tick and keep the one that works on this phone
+function hapticCheck() {
+  const o = $('overlay');
+  const names = { A: 'Method A', B: 'Method B', C: 'Method C', D: 'Method D' };
+  const draw = () => {
+    o.innerHTML = `
+      <div class="card" role="dialog" aria-label="Haptics check">
+        <h3>Haptics check</h3>
+        <p>First tap the real switch. If you feel a tick there, your phone can do it. Then tap Try on each method, and choose the one you feel.</p>
+        <label class="hc-real"><span>Real switch</span><input type="checkbox" switch id="hcReal"></label>
+        <div class="hc-list">${Object.keys(names).map(m => `<div class="hc-row${S().hapticMethod === m ? ' on' : ''}"><b>${names[m]}</b><button class="btn" data-try="${m}">Try</button><button class="btn ${S().hapticMethod === m ? 'primary' : ''}" data-use="${m}">${S().hapticMethod === m ? 'Using' : 'Use'}</button></div>`).join('')}</div>
+        <p class="hc-note">${Haptic.canVibrate ? 'This phone has a vibration motor the game can use directly, so the methods do not apply.' : 'If nothing ticks, check Settings → Sounds &amp; Haptics → System Haptics is on, and that the phone runs iOS 18 or later.'}</p>
+        <button class="btn primary" id="hcDone">Done</button>
+      </div>`;
+    o.hidden = false;
+    o.querySelectorAll('[data-try]').forEach(b => b.onclick = () => Haptic.test(b.dataset.try));
+    o.querySelectorAll('[data-use]').forEach(b => b.onclick = () => { S().hapticMethod = b.dataset.use; Store.save(); Haptic.test(b.dataset.use); draw(); });
+    $('hcDone').onclick = () => { o.hidden = true; o.innerHTML = ''; };
+  };
+  draw();
+}
+
 function renderSettings() {
   const items = [
     ['sound', 'Sound', 'Taps, meows and fanfares.'],
@@ -1501,7 +1552,7 @@ function renderSettings() {
     row.querySelector('button').onclick = e => { S()[k] = !S()[k]; Store.save(); Sound.unlock(); Sound.ui(); Haptic.tick(); renderSettings(); };
     if (k === 'haptics') {
       const t = document.createElement('button'); t.className = 'test-btn'; t.textContent = 'Test';
-      t.onclick = () => { const was = S().haptics; S().haptics = true; Haptic.success(); S().haptics = was; };
+      t.onclick = () => { Sound.ui(); hapticCheck(); };
       row.insertBefore(t, row.lastElementChild);
     }
     $('settingList').appendChild(row);
@@ -2341,7 +2392,7 @@ function applyTheme() {
 }
 applyTheme();
 matchMedia('(prefers-color-scheme: dark)').addEventListener?.('change', applyTheme);
-if (S().dev) $('ver').textContent = 'Tucker Arcade · v1.14 · test mode';
+if (S().dev) $('ver').textContent = 'Tucker Arcade · v1.15 · test mode';
 if (/[?&]dev=1/.test(location.search)) { S().dev = true; Store.save(); }
 show('home');
 Supply.prefetch(nextLevelFor(Store.me));
