@@ -131,7 +131,7 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--accent); ou
 /* ---------- rule slides ---------- */
 .card.slide { gap: 10px; }
 .slide-art { display: grid; place-items: center; min-height: 150px; }
-.slide-art .mini { width: 150px; height: 150px; filter: drop-shadow(0 4px 10px rgba(0,0,0,.12)); }
+.slide-art .mini { width: 172px; height: 172px; filter: drop-shadow(0 4px 10px rgba(0,0,0,.12)); }
 .card.slide h3 { font-size: 26px; }
 .card.slide p { font-size: 15.5px; line-height: 1.4; }
 .dots { display: flex; justify-content: center; gap: 6px; }
@@ -262,7 +262,7 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--accent); ou
 }
 .cell { position: relative; border-radius: 4px; display: grid; place-items: center; transition: filter .2s, opacity .25s; }
 .cell svg { width: 82%; height: 82%; pointer-events: none; }
-.cell .x { width: 66%; height: 66%; filter: drop-shadow(0 1px 1px rgba(0,0,0,.18)); }
+.cell .x { width: 66%; height: 66%; }
 .cell .x path { stroke: #fff; stroke-width: 6.5; stroke-linecap: round; fill: none; }
 .cell.crossed::before { content: ""; position: absolute; inset: 0; border-radius: inherit; background: rgba(30,22,40,.16); }
 .cell > svg { position: relative; z-index: 1; }
@@ -279,7 +279,7 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--accent); ou
 @keyframes flash { 30% { opacity: .55; } }
 .cell.shine::after { content: ""; position: absolute; inset: 0; border-radius: inherit; background: #fff; opacity: 0; animation: shine .7s; }
 @keyframes shine { 40% { opacity: .45; } }
-.board.focus .cell:not(.hl) { opacity: .32; filter: saturate(.5); }
+.board.focus .cell:not(.hl) { opacity: .32; }
 .cell.soft { box-shadow: inset 0 0 0 3px rgba(255,255,255,.9); }
 .cell.target::before { content: ""; position: absolute; inset: 0; border-radius: inherit; background: rgba(255,255,255,.22); animation: tglow 1.1s ease-in-out infinite; }
 @keyframes tglow { 50% { background: rgba(255,255,255,0); } }
@@ -465,7 +465,7 @@ table.fast tr:last-child td { border-bottom: 0; }
         <button class="btn" id="scoresBtn">Scores</button>
       </div>
     </div>
-    <div class="ver" id="ver">Tucker Arcade · v1.17</div>
+    <div class="ver" id="ver">Tucker Arcade · v1.18</div>
   </section>
 
   <!-- GAME -->
@@ -1086,6 +1086,7 @@ const Store = {
   savePuzzle(level, p) { try { localStorage.setItem('nibbledoku.s' + level, JSON.stringify(p)); } catch (e) {} }
 };
 Store.load();
+try { for (const k of Object.keys(localStorage)) if (/^nibbledoku\.[pqr]\d/.test(k)) localStorage.removeItem(k); } catch (e) {}
 const S = () => Store.data.settings;
 function nextLevelFor(pl) {
   const done = Object.keys(pl.done).map(Number);
@@ -1468,7 +1469,7 @@ $('scoresBtn').onclick = () => { Sound.unlock(); Sound.ui(); Haptic.tick(); show
 $('settingsBtn').onclick = () => { Sound.unlock(); Sound.ui(); Haptic.tick(); show('settings'); };
 let logoTaps = 0, logoTimer = 0;
 $('ver').onclick = () => { logoTaps++; clearTimeout(logoTimer); logoTimer = setTimeout(() => logoTaps = 0, 1200);
-  if (logoTaps >= 5) { S().dev = !S().dev; Store.save(); logoTaps = 0; $('ver').textContent = 'Tucker Arcade · v1.17' + (S().dev ? ' · test mode' : ''); Haptic.success(); } };
+  if (logoTaps >= 5) { S().dev = !S().dev; Store.save(); logoTaps = 0; $('ver').textContent = 'Tucker Arcade · v1.18' + (S().dev ? ' · test mode' : ''); Haptic.success(); } };
 // blink on home
 $('homeCat').innerHTML = nibSVG();
 document.addEventListener('pointermove', e => { if (!$('home').hidden) Nib.lookAt($('homeCat').firstChild, e.clientX, e.clientY, 900); });
@@ -1705,7 +1706,7 @@ const Game = (() => {
 
   function tokenSVG(g) {
     const col = G.colours[g][0], done = G.B.regs[g].some(i => G.cats[i]);
-    if (done) return nibSVG();
+    if (done) return '<svg viewBox="0 0 100 100"><use href="#nib"/>' + OUTFIT_SVG[curOutfit()] + '</svg>';
     return `<svg viewBox="0 0 100 100"><path d="M14 92 L14 30 L28 6 L42 26 L58 26 L72 6 L86 30 L86 92 Z" fill="${col}" stroke="var(--edge)" stroke-opacity=".25" stroke-width="3" stroke-linejoin="round"/></svg>`;
   }
 
@@ -1818,10 +1819,10 @@ const Game = (() => {
       say('Every colour needs exactly one cat. Yellow only has one square, so I must go there. Double-tap it!', 'wink');
     } else if (step === 2) {
       tut.expect = -2; tut.targets = [...Engine.killSet(B, 1)];
-      say("One cat per row and column, and cats can't touch, not even corners. So the glowing squares are out. Tap them to cross them out, or swipe across them.", '');
+      say("Now my row going across, my column going up and down, and every square touching me are out. Tap the glowing squares to cross them out, or swipe across them.", '');
     } else if (step === 3) {
       tut.expect = 7;
-      say('Row 2 only has one free square left. Double-tap it!', 'wink');
+      say('Look at the second row, going across. It only has one free square left. Double-tap it!', 'wink');
     } else if (step === 4) {
       tut.expect = -2; tut.targets = [...Engine.killSet(B, 7)];
       say('Lovely. Now cross out everything that cat rules out.', 'happy');
@@ -1844,9 +1845,16 @@ const Game = (() => {
     } else { clearHighlight(); }
   }
   // mini boards for the rule slides, drawn from the tutorial board itself
-  function miniBoard({ cats = [], xs = [], ring = [], bad = [] }) {
-    const N = TUT.N, sz = 25, gap = 2, W = N * sz + (N + 1) * gap;
-    let h = `<svg viewBox="0 0 ${W} ${W}" class="mini" aria-hidden="true"><rect width="${W}" height="${W}" rx="7" fill="var(--boardbg)"/>`;
+  function miniBoard({ cats = [], xs = [], ring = [], bad = [], arrow = null }) {
+    const N = TUT.N, sz = 25, gap = 2, W = N * sz + (N + 1) * gap, P = 18;
+    let h = `<svg viewBox="${-P} ${-P} ${W + 2 * P} ${W + 2 * P}" class="mini" aria-hidden="true"><rect width="${W}" height="${W}" rx="7" fill="var(--boardbg)"/>`;
+    if (arrow) {
+      // a band round the whole line, with arrowheads showing which way it runs
+      const k = arrow.k, mid = gap + k * (sz + gap) + sz / 2, a = 'stroke="var(--accent)" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round" fill="none"';
+      h += arrow.dir === 'row'
+        ? `<path d="M${-P + 4} ${mid} H-4 M${-P + 9} ${mid - 5} L${-P + 4} ${mid} L${-P + 9} ${mid + 5} M${W + 4} ${mid} H${W + P - 4} M${W + P - 9} ${mid - 5} L${W + P - 4} ${mid} L${W + P - 9} ${mid + 5}" ${a}/>`
+        : `<path d="M${mid} ${-P + 4} V-4 M${mid - 5} ${-P + 9} L${mid} ${-P + 4} L${mid + 5} ${-P + 9} M${mid} ${W + 4} V${W + P - 4} M${mid - 5} ${W + P - 9} L${mid} ${W + P - 4} L${mid + 5} ${W + P - 9}" ${a}/>`;
+    }
     for (let i = 0; i < N * N; i++) {
       const x = gap + (i % N) * (sz + gap), y = gap + ((i / N) | 0) * (sz + gap);
       h += `<rect x="${x}" y="${y}" width="${sz}" height="${sz}" rx="3" fill="${TUT_COLOURS[TUT.reg[i]][0]}"/>`;
@@ -1854,15 +1862,23 @@ const Game = (() => {
       if (cats.includes(i)) h += `<use href="#nib" x="${x + 1.5}" y="${y + 1.5}" width="${sz - 3}" height="${sz - 3}"/>`;
       if (ring.includes(i)) h += `<rect x="${x + 1}" y="${y + 1}" width="${sz - 2}" height="${sz - 2}" rx="3" fill="none" stroke="#fff" stroke-width="2"/>`;
     }
+    if (arrow) {
+      const o = gap + arrow.k * (sz + gap) - 1.5, L = W - 2 * gap + 3;
+      h += arrow.dir === 'row'
+        ? `<rect x="${gap - 1.5}" y="${o}" width="${L}" height="${sz + 3}" rx="5" fill="none" stroke="var(--accent)" stroke-width="2.6"/>`
+        : `<rect x="${o}" y="${gap - 1.5}" width="${sz + 3}" height="${L}" rx="5" fill="none" stroke="var(--accent)" stroke-width="2.6"/>`;
+    }
     return h + '</svg>';
   }
   const SLIDES = [
-    { title: 'Find a home for every cat', text: 'Each puzzle has one cat hiding in every row, every column and every colour. Your job is to find them all.',
+    { title: 'Find a home for every cat', text: 'Every puzzle hides some cats. Four simple rules tell you where they go. Let’s learn them one at a time.',
       art: () => miniBoard({ cats: [1, 7, 8, 14] }) },
     { title: 'One cat per colour', text: 'Every colour gets exactly one cat. Once a colour has its cat, the rest of that colour is crossed out.', rule: 'colour',
       art: () => miniBoard({ cats: [8], xs: [0, 4, 5, 9, 12], ring: [0, 4, 5, 8, 9, 12] }) },
-    { title: 'One per row and column', text: 'Every row and every column also gets exactly one cat. So a cat crosses out its whole row and column.', rule: 'line',
-      art: () => miniBoard({ cats: [7], xs: [4, 5, 6, 3, 11, 15], ring: [4, 5, 6, 7, 3, 11, 15] }) },
+    { title: 'One cat in every row', text: 'A row is a line of squares going across, from side to side. Every row gets exactly one cat, so the rest of that row is crossed out.', rule: 'line',
+      art: () => miniBoard({ cats: [7], xs: [4, 5, 6], arrow: { dir: 'row', k: 1 } }) },
+    { title: 'One cat in every column', text: 'A column is a line of squares going up and down, from top to bottom. Every column gets exactly one cat too, so the rest of that column is crossed out.', rule: 'line',
+      art: () => miniBoard({ cats: [7], xs: [3, 11, 15], arrow: { dir: 'col', k: 3 } }) },
     { title: "Cats can't touch", text: "Cats need their space. No two cats can sit next to each other, not even corner to corner.", rule: 'touch',
       art: () => miniBoard({ cats: [6], xs: [1, 2, 3, 5, 7, 9, 10, 11], ring: [1, 2, 3, 5, 7, 9, 10, 11], bad: [1, 3, 9, 11] }) },
     { title: 'How to play', text: 'Tap a square to cross it out. Swipe to cross out lots at once. Double-tap to place a cat. A wrong cat costs a fish, and you have three. Stuck? Tap Hint.',
@@ -2040,6 +2056,7 @@ const Game = (() => {
     if (drag.mode === 'paint' && !G.xs[j]) { G.xs[j] = 1; renderCell(j, 'xin'); Sound.paint(drag.painted++); Haptic.tick(); }
     else if (drag.mode === 'erase' && G.xs[j] === 1) { G.xs[j] = 0; renderCell(j); Sound.paint(Math.max(0, 8 - drag.painted++)); Haptic.tick(); }
   }
+  const DOUBLE_TAP_MS = 420;
   const hapEl = $('hapLayer'); let hapSide = 1;
   function hapShift(x) {
     if (!S().haptics) return;
@@ -2056,7 +2073,7 @@ const Game = (() => {
     const d = drag; drag = null;
     if (d.moved) { if (d.painted === 0 && d.snap) G.undo.pop(); changed(); tapMem.cell = -1; return; }
     const i = d.start, now = performance.now();
-    if (tapMem.cell === i && now - tapMem.t < 330) {
+    if (tapMem.cell === i && now - tapMem.t < DOUBLE_TAP_MS) {
       // double tap: undo the first tap's cross, then try the cat
       if (tapMem.toggled) { G.undo.pop(); G.xs[i] = tapMem.prev; renderCell(i); }
       tapMem.cell = -1;
@@ -2384,11 +2401,11 @@ const Game = (() => {
   function confetti() {
     if (matchMedia('(prefers-reduced-motion: reduce)').matches) return;
     const cv = $('confetti'), ctx = cv.getContext('2d'); cv.hidden = false;
-    const dpr = devicePixelRatio || 1, W = cv.clientWidth, H = cv.clientHeight; cv.width = W * dpr; cv.height = H * dpr; ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    const dpr = Math.min(2, devicePixelRatio || 1), W = cv.clientWidth, H = cv.clientHeight; cv.width = W * dpr; cv.height = H * dpr; ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
     const cols = G.colours.map(c => c[0]).concat(['#F4B642']);
     const br = board.getBoundingClientRect(), ar = cv.getBoundingClientRect();
     const ox = br.left - ar.left + br.width / 2, oy = br.top - ar.top + br.height * .45;
-    const parts = Array.from({ length: 110 }, () => ({ x: ox + (Math.random() - .5) * br.width * .5, y: oy + (Math.random() - .5) * 40, vx: (Math.random() - .5) * 11, vy: -Math.random() * 13 - 5, r: Math.random() * 6, vr: (Math.random() - .5) * .3, s: 6 + Math.random() * 7, c: cols[(Math.random() * cols.length) | 0], fish: Math.random() < .18 }));
+    const parts = Array.from({ length: 80 }, () => ({ x: ox + (Math.random() - .5) * br.width * .5, y: oy + (Math.random() - .5) * 40, vx: (Math.random() - .5) * 11, vy: -Math.random() * 13 - 5, r: Math.random() * 6, vr: (Math.random() - .5) * .3, s: 6 + Math.random() * 7, c: cols[(Math.random() * cols.length) | 0], fish: Math.random() < .18 }));
     const t0 = performance.now();
     function frame(t) {
       ctx.clearRect(0, 0, W, H);
@@ -2419,7 +2436,7 @@ function applyTheme() {
 applyTheme();
 syncHapLayer();
 matchMedia('(prefers-color-scheme: dark)').addEventListener?.('change', applyTheme);
-if (S().dev) $('ver').textContent = 'Tucker Arcade · v1.17 · test mode';
+if (S().dev) $('ver').textContent = 'Tucker Arcade · v1.18 · test mode';
 if (/[?&]dev=1/.test(location.search)) { S().dev = true; Store.save(); }
 show('home');
 Supply.prefetch(nextLevelFor(Store.me));
