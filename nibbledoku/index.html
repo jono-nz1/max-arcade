@@ -128,6 +128,16 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--accent); ou
 .seg button.on { background: var(--surface); color: var(--ink); box-shadow: 0 1px 3px rgba(0,0,0,.15); }
 .test-btn { font-family: var(--f-display); font-weight: 600; font-size: 14px; color: var(--accent); padding: 6px 8px; margin-left: auto; }
 
+/* ---------- Nibbles says ---------- */
+.card.praise { gap: 12px; padding-top: 18px; }
+.praise-cat { width: 132px; height: 132px; margin: -84px auto 0; cursor: pointer; filter: drop-shadow(0 8px 10px rgba(0,0,0,.18)); }
+.praise-cat svg { width: 100%; height: 100%; }
+.ribbon { justify-self: center; position: relative; background: var(--accent); color: var(--accent-ink); font-family: var(--f-display); font-weight: 700; font-size: 22px; padding: 8px 22px; border-radius: 12px; transform: rotate(-2deg); box-shadow: 0 4px 0 #B9621F; animation: ribbonin .5s cubic-bezier(.3,1.7,.5,1) .15s both; }
+@keyframes ribbonin { from { transform: rotate(-12deg) scale(.4); opacity: 0; } to { transform: rotate(-2deg) scale(1); opacity: 1; } }
+.praise-text { font-size: 17px; line-height: 1.4; color: var(--ink) !important; text-wrap: pretty; }
+.praise-ps { font-size: 14.5px; line-height: 1.35; background: var(--bg); border-radius: 12px; padding: 8px 12px; text-align: left; }
+.praise-ps b { color: var(--accent); font-family: var(--f-display); }
+
 /* ---------- rule slides ---------- */
 .card.slide { gap: 10px; }
 .slide-art { display: grid; place-items: center; min-height: 150px; }
@@ -465,7 +475,7 @@ table.fast tr:last-child td { border-bottom: 0; }
         <button class="btn" id="scoresBtn">Scores</button>
       </div>
     </div>
-    <div class="ver" id="ver">Tucker Arcade · v1.18</div>
+    <div class="ver" id="ver">Tucker Arcade · v1.19</div>
   </section>
 
   <!-- GAME -->
@@ -1469,7 +1479,7 @@ $('scoresBtn').onclick = () => { Sound.unlock(); Sound.ui(); Haptic.tick(); show
 $('settingsBtn').onclick = () => { Sound.unlock(); Sound.ui(); Haptic.tick(); show('settings'); };
 let logoTaps = 0, logoTimer = 0;
 $('ver').onclick = () => { logoTaps++; clearTimeout(logoTimer); logoTimer = setTimeout(() => logoTaps = 0, 1200);
-  if (logoTaps >= 5) { S().dev = !S().dev; Store.save(); logoTaps = 0; $('ver').textContent = 'Tucker Arcade · v1.18' + (S().dev ? ' · test mode' : ''); Haptic.success(); } };
+  if (logoTaps >= 5) { S().dev = !S().dev; Store.save(); logoTaps = 0; $('ver').textContent = 'Tucker Arcade · v1.19' + (S().dev ? ' · test mode' : ''); Haptic.success(); } };
 // blink on home
 $('homeCat').innerHTML = nibSVG();
 document.addEventListener('pointermove', e => { if (!$('home').hidden) Nib.lookAt($('homeCat').firstChild, e.clientX, e.clientY, 900); });
@@ -1637,7 +1647,8 @@ const Game = (() => {
     G = {
       level, daily, N, reg: p.reg, sol: p.sol, B, colours,
       xs: new Uint8Array(N * N), cats: new Uint8Array(N * N),
-      fish: 3, elapsed: 0, hintCost: 0, undo: [], over: false, loading: false
+      fish: 3, elapsed: 0, hintCost: 0, undo: [], over: false, loading: false,
+      st: { wrong: 0, undos: 0, crosses: 0, swipes: 0, hints: 0, run: 0, bestRun: 0 }
     };
     if (saved) {
       G.xs = Uint8Array.from(saved.xs); G.cats = Uint8Array.from(saved.cats);
@@ -1967,6 +1978,7 @@ const Game = (() => {
     if (G.xs[i] === 2) { say("That square's definitely not mine.", ''); return false; }
     snapshot();
     G.xs[i] = G.xs[i] ? 0 : 1;
+    if (G.xs[i]) G.st.crosses++;
     renderCell(i, G.xs[i] ? 'xin' : null);
     G.xs[i] ? Sound.tapX() : Sound.eraseX();
     Haptic.tick();
@@ -1983,6 +1995,7 @@ const Game = (() => {
     if (G.sol[r] === c) {
       // correct
       G.cats[i] = 1; G.xs[i] = 0; combo++;
+      G.st.run++; G.st.bestRun = Math.max(G.st.bestRun, G.st.run);
       renderCell(i, 'catin');
       Sound.cat(combo); Haptic.heavy();
       const g = G.reg[i];
@@ -2006,7 +2019,7 @@ const Game = (() => {
       changed();
     } else {
       // wrong
-      combo = 0;
+      combo = 0; G.st.wrong++; G.st.run = 0;
       G.xs[i] = 2; G.fish--;
       if (tut && G.fish < 1) G.fish = 1;
       renderCell(i, 'shake');
@@ -2053,7 +2066,7 @@ const Game = (() => {
   });
   function paintCell(j) {
     if (G.cats[j] || G.xs[j] === 2) return;
-    if (drag.mode === 'paint' && !G.xs[j]) { G.xs[j] = 1; renderCell(j, 'xin'); Sound.paint(drag.painted++); Haptic.tick(); }
+    if (drag.mode === 'paint' && !G.xs[j]) { G.xs[j] = 1; G.st.crosses++; renderCell(j, 'xin'); Sound.paint(drag.painted++); Haptic.tick(); }
     else if (drag.mode === 'erase' && G.xs[j] === 1) { G.xs[j] = 0; renderCell(j); Sound.paint(Math.max(0, 8 - drag.painted++)); Haptic.tick(); }
   }
   const DOUBLE_TAP_MS = 420;
@@ -2071,7 +2084,7 @@ const Game = (() => {
   wrap.addEventListener('pointerup', e => {
     if (!drag) return;
     const d = drag; drag = null;
-    if (d.moved) { if (d.painted === 0 && d.snap) G.undo.pop(); changed(); tapMem.cell = -1; return; }
+    if (d.moved) { if (d.painted === 0 && d.snap) G.undo.pop(); else if (d.mode === 'paint' && d.painted >= 2) G.st.swipes++; changed(); tapMem.cell = -1; return; }
     const i = d.start, now = performance.now();
     if (tapMem.cell === i && now - tapMem.t < DOUBLE_TAP_MS) {
       // double tap: undo the first tap's cross, then try the cat
@@ -2090,7 +2103,7 @@ const Game = (() => {
   $('undoBtn').onclick = () => {
     if (!G || !G.undo.length || G.over || (tut && tut.step < 5)) return;
     const s = G.undo.pop();
-    G.xs = s.xs; G.cats = s.cats; combo = 0;
+    G.xs = s.xs; G.cats = s.cats; combo = 0; G.st.undos++;
     for (let i = 0; i < G.N * G.N; i++) renderCell(i);
     renderTokens(); Sound.undo(); Haptic.tick(); changed();
   };
@@ -2226,7 +2239,7 @@ const Game = (() => {
     let tier = 1;
     if (hintState && hintState.key === key) tier = Math.min(3, hintState.tier + 1);
     const charge = hintState && hintState.key === key ? (tier > hintState.tier ? HINT_COST[tier] : 0) : HINT_COST[1];
-    G.hintCost += charge;
+    G.hintCost += charge; if (charge) G.st.hints++;
     hintState = { key, tier, step: s };
     const h = hintContent(s, tier);
     highlight(h.cells, h.targets);
@@ -2246,6 +2259,98 @@ const Game = (() => {
     else { for (const i of s.xs) if (!G.cats[i] && !G.xs[i]) { G.xs[i] = 1; renderCell(i, 'xin'); } Sound.sweep(s.xs.length); }
     say('Done. Your move.', 'happy');
     changed();
+  }
+
+  /* ----- Nibbles says: a kind word after every win ----- */
+  // Each line names something the player actually did. `when` decides if it fits this game,
+  // `pri` decides which fitting line wins, and recently shown lines are skipped so they rotate.
+  const PRAISE = [
+    { id: 'zoom', pri: 9, when: x => x.fast, title: 'Lightning paws!', text: x => `${x.time} for a ${x.N} × ${x.N}! You spotted the moves so fast my whiskers are still spinning.` },
+    { id: 'zoomies', pri: 8, when: x => x.fast, title: 'Zoomies!', text: () => 'That was faster than me when someone shakes the treat bag.' },
+    { id: 'record', pri: 9, when: x => x.record, title: 'New record!', text: x => `Your fastest ${x.N} × ${x.N} ever. You get quicker every time you play.` },
+    { id: 'firstsize', pri: 10, when: x => x.firstSize, title: 'Bigger board, no problem', text: x => `Your very first ${x.N} × ${x.N}! The boards are growing, and so is your brain.` },
+    { id: 'clean', pri: 7, when: x => x.clean, title: 'Not one fish lost', text: x => `Every cat in the right spot first time. That's careful, clever thinking, ${x.name}.` },
+    { id: 'noguess', pri: 6, when: x => x.clean && x.noHints, title: 'Purrfect logic', text: () => "You didn't guess once. You worked every cat out, and that's the very best way to play." },
+    { id: 'solo', pri: 6, when: x => x.noHints && x.N >= 6, title: 'All by yourself', text: () => 'No hints at all! You found every clue on your own.' },
+    { id: 'detective', pri: 5, when: x => x.noHints, title: 'Puzzle detective', text: () => 'You figured out every single step yourself. Detective Nibbles is very impressed.' },
+    { id: 'learner', pri: 6, when: x => x.hints > 0, title: 'Great learning', text: () => 'You used a hint, then took it from there. That’s exactly how puzzle masters learn new tricks.' },
+    { id: 'grit', pri: 9, when: x => x.fish === 1, title: 'Never gave up', text: x => `Down to your last fish and you still got there. That's real grit, ${x.name}.` },
+    { id: 'phew', pri: 8, when: x => x.fish === 1, title: 'Phew!', text: () => 'That was close! You kept calm and solved it. My tail was puffed up the whole time.' },
+    { id: 'bounce', pri: 6, when: x => x.wrong > 0 && x.fish > 1, title: 'Bounced right back', text: () => 'One wrong spot didn’t stop you. You learned from it and kept going.' },
+    { id: 'crosser', pri: 5, when: x => x.crosses >= x.N * x.N * .5, title: 'Careful crosser', text: () => 'You crossed out squares to narrow things down. That’s exactly what smart solvers do.' },
+    { id: 'swipe', pri: 5, when: x => x.swipes >= 3, title: 'Swipe master', text: () => 'Those swipes were slick. Crossing out a whole line at once saves loads of time.' },
+    { id: 'roll', pri: 6, when: x => x.bestRun >= 6, title: 'On a roll', text: x => `${x.bestRun} cats in a row without a single wrong guess!` },
+    { id: 'rethink', pri: 5, when: x => x.undos > 0, title: 'Smart rethink', text: () => 'You used Undo to change your plan. Spotting a better idea and switching is really clever.' },
+    { id: 'steady', pri: 4, when: x => x.slow, title: 'Slow and steady', text: () => 'You took your time and got it right. Thinking things through is a superpower.' },
+    { id: 'again', pri: 9, when: x => x.retry, title: 'Second time lucky', text: () => 'You came back to the puzzle that beat you, and won. That’s how you get better.' },
+    { id: 'hattrick', pri: 7, when: x => x.session === 3, title: 'Hat trick!', text: () => 'Three puzzles in a row! You’re on fire. Not literally. I checked.' },
+    { id: 'daily', pri: 6, when: x => x.daily, title: 'Daily done', text: () => 'Today’s puzzle, ticked off. Everyone in the family gets this same board, so ask them how they went!' },
+    { id: 'clever', pri: 1, when: () => true, title: 'Clever cat', text: x => `Every row, every column, every colour sorted. Nicely done, ${x.name}.` },
+    { id: 'brain', pri: 1, when: () => true, title: 'Brain power', text: () => 'That puzzle needed real thinking, and you did it.' },
+    { id: 'top', pri: 1, when: () => true, title: 'Top solver', text: () => 'You’re getting really good at this. I might need to find harder puzzles!' },
+    { id: 'paw', pri: 1, when: () => true, title: 'High paw!', text: () => 'I’d give you a high five, but I’ve only got paws. You solved it!' }
+  ];
+  const PS = [
+    'All this thinking has made me hungry. Is it dinner time yet?',
+    'I could really do with a cuddle now.',
+    'I’m going to have a little nap on your warm phone. Wake me for the next one.',
+    'Is that a fish I can smell? No? Just me then.',
+    'Could you scratch behind my ears? Left one. Bit more. Perfect.',
+    'I’d clap, but I’ve got paws. Here’s a slow blink instead.',
+    'I knocked a cup off the bench to celebrate. You’re welcome.',
+    'I’m not saying I helped, but I did sit on the puzzle for good luck.',
+    'I’m purring at maximum volume right now.',
+    'Next level, can I have a cardboard box to sit in?',
+    'My tummy is rumbling louder than my purr.',
+    'You’re my favourite human. Don’t tell the others.'
+  ];
+  const CHEER_LOSE = [
+    'Three wrong spots and I’m hungry. Same puzzle, fresh start?',
+    'Tricky one! Every wrong spot teaches you something. Want another go?',
+    'Even the best puzzlers run out of fish sometimes. Have another try, I believe in you.',
+    'That puzzle was sneaky. Try crossing out squares before placing cats this time.',
+    'Don’t worry, I’ve still got snacks hidden under the couch. Let’s try again!'
+  ];
+  let sessionWins = 0;
+  const lostThisSession = new Set();
+  function pickFrom(list, seenKey, n) {
+    const me = Store.me; me[seenKey] = me[seenKey] || [];
+    const fresh = list.filter(x => !me[seenKey].includes(x.id ?? x));
+    const pool = fresh.length ? fresh : list;
+    const pick = pool[(Math.random() * Math.min(pool.length, n)) | 0];
+    me[seenKey].push(pick.id ?? pick); if (me[seenKey].length > Math.min(10, list.length - 1)) me[seenKey].shift();
+    return pick;
+  }
+  function praiseFor(x) {
+    const fit = PRAISE.filter(p => p.when(x)).sort((a, b) => b.pri - a.pri);
+    // take the strongest few that fit, with a little shuffle so it doesn't always say the same thing
+    const top = fit.filter(p => p.pri >= fit[0].pri - 2);
+    const me = Store.me; me.praiseSeen = me.praiseSeen || [];
+    let pool = top.filter(p => !me.praiseSeen.includes(p.id));
+    if (!pool.length) pool = fit.filter(p => !me.praiseSeen.includes(p.id));
+    if (!pool.length) pool = top;
+    const pick = pool[(Math.random() * Math.min(pool.length, 3)) | 0];
+    me.praiseSeen.push(pick.id); if (me.praiseSeen.length > 10) me.praiseSeen.shift();
+    const ps = Math.random() < .5 ? pickFrom(PS, 'psSeen', PS.length) : null;
+    Store.save();
+    return { title: pick.title, text: pick.text(x), ps };
+  }
+  function praiseSlide(x, next) {
+    const p = praiseFor(x);
+    const o = $('overlay');
+    o.innerHTML = `
+      <div class="card praise" role="dialog" aria-label="${p.title}">
+        <div class="praise-cat" id="praiseCat">${nibSVG()}</div>
+        <div class="ribbon"><span>${p.title}</span></div>
+        <p class="praise-text">${p.text}</p>
+        ${p.ps ? `<p class="praise-ps"><b>P.S.</b> ${p.ps}</p>` : ''}
+        <button class="btn primary" id="praiseNext">${x.daily ? 'See family times' : 'See my score'}</button>
+      </div>`;
+    o.hidden = false;
+    const cat = $('praiseCat').firstChild;
+    setTimeout(() => { Nib.pet(cat); }, 450);
+    $('praiseCat').onclick = () => Nib.pet(cat);
+    $('praiseNext').onclick = () => { Sound.ui(); Haptic.tick(); next(); };
   }
 
   /* ----- end states ----- */
@@ -2309,6 +2414,20 @@ const Game = (() => {
     G.over = 'win'; clearHighlight(); renderHud();
     const sc = calcScore();
     const me = Store.me, before = fishKept(me);
+    // facts for Nibbles' comment, gathered before this win is saved
+    const sizeTimes = Object.entries(me.done).filter(([L]) => Engine.levelSpec(+L).N === G.N && +L !== G.level).map(([, d]) => d.time);
+    const prevBest = sizeTimes.length ? Math.min(...sizeTimes, me.done[G.level] ? me.done[G.level].time : 1e9) : (me.done[G.level] ? me.done[G.level].time : null);
+    const par = G.N * G.N * 3;
+    sessionWins++;
+    const facts = {
+      name: Store.data.player, N: G.N, time: fmtTime(G.elapsed), fish: G.fish, daily: G.daily,
+      fast: G.elapsed < par * .45, slow: G.elapsed > par * 1.2,
+      record: !G.daily && prevBest !== null && G.elapsed < prevBest,
+      firstSize: !G.daily && !sizeTimes.length && !me.done[G.level] && G.N > 5,
+      clean: G.st.wrong === 0, noHints: G.st.hints === 0, hints: G.st.hints, wrong: G.st.wrong,
+      crosses: G.st.crosses, swipes: G.st.swipes, undos: G.st.undos, bestRun: G.st.bestRun,
+      retry: lostThisSession.has(String(G.level)), session: sessionWins
+    };
     let headline, sub, isBest = false, prev = null, firstDaily = false;
     if (G.daily) {
       const ymd = keyNum(G.level);
@@ -2334,7 +2453,8 @@ const Game = (() => {
     hopParade(() => {
       Sound.win(); Haptic.success();
       confetti();
-      setTimeout(() => {
+      setTimeout(() => praiseSlide(facts, showResults), 550);
+      function showResults() {
       let family = '';
       if (G.daily) {
         const ymd = keyNum(G.level);
@@ -2370,11 +2490,12 @@ const Game = (() => {
         $('replayBtn').onclick = wardOrReplay;
         $('lvBtn').onclick = () => { closeOverlay(); Haptic.tick(); show('levels'); };
       }
-      }, 550);
+      }
     });
   }
   function lose() {
     G.over = 'lose'; clearHighlight(); renderHud();
+    lostThisSession.add(String(G.level)); sessionWins = 0;
     Store.me[G.daily ? 'inprogD' : 'inprog'] = null; Store.save();
     Sound.lose(); Haptic.error();
     setBubbleCat('sad');
@@ -2383,7 +2504,7 @@ const Game = (() => {
         <div class="card" role="dialog" aria-label="Out of fish">
           <div class="big-cat">${nibUse('sad')}</div>
           <h3>Out of fish!</h3>
-          <p>Three wrong spots and I'm hungry. Same puzzle, fresh start?</p>
+          <p>${pickFrom(CHEER_LOSE, 'cheerSeen', CHEER_LOSE.length)}</p>
           <button class="btn primary" id="retryBtn">Try again</button>
           <button class="btn" id="homeBtn2">Menu</button>
         </div>`);
@@ -2436,7 +2557,7 @@ function applyTheme() {
 applyTheme();
 syncHapLayer();
 matchMedia('(prefers-color-scheme: dark)').addEventListener?.('change', applyTheme);
-if (S().dev) $('ver').textContent = 'Tucker Arcade · v1.18 · test mode';
+if (S().dev) $('ver').textContent = 'Tucker Arcade · v1.19 · test mode';
 if (/[?&]dev=1/.test(location.search)) { S().dev = true; Store.save(); }
 show('home');
 Supply.prefetch(nextLevelFor(Store.me));

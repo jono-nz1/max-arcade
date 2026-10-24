@@ -1,5 +1,5 @@
 // Nibbledoku offline cache. Bump VERSION whenever index.html changes.
-const VERSION = 'nibbledoku-v19';
+const VERSION = 'nibbledoku-v20';
 const FILES = ['./', './index.html', './manifest.webmanifest', './icon-180.png', './icon-192.png', './icon-512.png'];
 
 self.addEventListener('install', e => {
