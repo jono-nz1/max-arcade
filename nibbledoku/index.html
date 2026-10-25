@@ -142,24 +142,25 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--accent); ou
 .fam-head { font-family: var(--f-display); font-weight: 600; color: var(--ink) !important; margin: 0 0 -4px !important; text-align: left; }
 
 /* ---------- journey ---------- */
-.journey { display: grid; gap: 14px; margin-top: 10px; padding-bottom: 30px; }
-.area { --ac: var(--accent); }
-.area-head { display: flex; gap: 12px; align-items: center; text-align: left; background: color-mix(in srgb, var(--ac) 16%, var(--surface)); border-radius: 18px; padding: 10px 14px; box-shadow: var(--shadow); }
-.area-head svg { width: 56px; height: 56px; flex: none; }
-.area-head b { font-family: var(--f-display); font-weight: 600; font-size: 19px; display: block; }
-.area-head small { display: block; color: var(--muted); font-size: 13.5px; line-height: 1.3; }
-.area-head small.meta { margin-top: 2px; font-weight: 600; color: color-mix(in srgb, var(--ac) 70%, var(--ink)); }
-.area.far .area-head { filter: grayscale(.7); opacity: .7; }
-.trail { position: relative; }
-.trail > svg { position: absolute; left: 0; top: 0; }
-.stop { position: absolute; width: 46px; height: 46px; border-radius: 50%; background: var(--surface); box-shadow: 0 0 0 3px var(--ac), var(--shadow); font-family: var(--f-display); font-weight: 600; font-size: 17px; display: grid; place-items: center; }
-.stop.done { background: var(--ac); color: #fff; }
-.stop.locked { box-shadow: 0 0 0 2px var(--line); color: var(--muted); opacity: .6; }
-.stop.next { background: var(--accent); color: var(--accent-ink); box-shadow: 0 0 0 4px color-mix(in srgb, var(--accent) 35%, transparent), var(--shadow); animation: pulse 1.6s ease-in-out infinite; }
-.stop i { position: absolute; bottom: -12px; left: 50%; transform: translateX(-50%); display: flex; }
+.journey { display: grid; gap: 0; margin-top: 10px; padding-bottom: 30px; border-radius: 22px; overflow: hidden; box-shadow: var(--shadow); }
+.area { --ac: var(--accent); position: relative; overflow: hidden; }
+.area .land { position: absolute; left: 0; top: 0; display: block; }
+.area.far .land, .area.far .sign { filter: grayscale(.4) brightness(.98); }
+.sign { position: absolute; left: 12px; right: 12px; top: 12px; display: flex; gap: 10px; align-items: center; text-align: left; background: rgba(255,255,255,.9); border-radius: 16px; padding: 8px 12px; box-shadow: 0 4px 12px rgba(46,38,48,.14); border: 2.5px solid var(--ac); color: #22303C; }
+.sign svg { width: 52px; height: 52px; flex: none; }
+.sign b { font-family: var(--f-display); font-weight: 700; font-size: 19px; display: block; color: #22303C; }
+.sign small { display: block; color: #5C6B78; font-size: 13px; line-height: 1.25; }
+.sign small.meta { margin-top: 2px; font-weight: 700; color: color-mix(in srgb, var(--ac) 75%, #22303C); }
+.stop { position: absolute; width: 50px; height: 50px; border-radius: 50%; background: #FFFFFF; color: #22303C; box-shadow: 0 0 0 4px var(--ac), 0 6px 10px rgba(46,38,48,.25); font-family: var(--f-display); font-weight: 700; font-size: 18px; display: grid; place-items: center; z-index: 2; }
+.stop.done { background: var(--ac); color: #fff; box-shadow: 0 0 0 4px #fff, 0 6px 10px rgba(46,38,48,.25); }
+.stop.locked { background: rgba(255,255,255,.7); color: #8A96A0; box-shadow: 0 0 0 3px rgba(255,255,255,.9), 0 3px 6px rgba(46,38,48,.12); }
+.stop.next { background: var(--accent); color: #fff; box-shadow: 0 0 0 4px #fff, 0 0 0 9px color-mix(in srgb, var(--accent) 40%, transparent), 0 6px 12px rgba(46,38,48,.3); animation: pulse 1.6s ease-in-out infinite; }
+.stop i { position: absolute; bottom: -13px; left: 50%; transform: translateX(-50%); display: flex; background: #fff; border-radius: 8px; padding: 1px 3px; box-shadow: 0 1px 3px rgba(0,0,0,.15); }
 .stop i svg { width: 13px; height: 9px; }
-.stop .here.left { left: -60px; }
-.stop .here { position: absolute; width: 58px; height: 58px; left: 48px; top: -8px; pointer-events: none; filter: drop-shadow(0 3px 4px rgba(0,0,0,.2)); animation: bob 3s ease-in-out infinite; }
+.stop .here.left { left: -62px; }
+.stop .here { position: absolute; width: 60px; height: 60px; left: 52px; top: -10px; pointer-events: none; filter: drop-shadow(0 3px 4px rgba(0,0,0,.25)); animation: bob 3s ease-in-out infinite; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .area .land { filter: brightness(.82) saturate(.9); } }
+:root[data-theme="dark"] .area .land { filter: brightness(.82) saturate(.9); }
 
 /* ---------- stickers ---------- */
 .stk-count { text-align: center; color: var(--muted); margin: 6px 0 0; font-family: var(--f-display); font-weight: 500; }
@@ -545,7 +546,7 @@ table.fast tr:last-child td { border-bottom: 0; }
       </div>
     </div>
     <div class="spacer"></div>
-    <div class="ver" id="ver">Tucker Arcade · v1.22</div>
+    <div class="ver" id="ver">Tucker Arcade · v1.23</div>
   </section>
 
   <!-- GAME -->
@@ -555,7 +556,6 @@ table.fast tr:last-child td { border-bottom: 0; }
       <div class="hud-mid">
         <div class="stat"><span id="hudLevelLbl">Level</span><b id="hudLevel">1</b></div>
         <div class="stat"><span id="hudTimeLbl">Time</span><b id="hudTime">0:00</b></div>
-        <div class="stat"><span>Score</span><b id="hudScore">0</b></div>
       </div>
       <button class="round-btn" id="restartBtn" aria-label="Restart level"><svg viewBox="0 0 24 24"><path d="M4 12 A8 8 0 1 0 7 5.8"/><path d="M4 4 L4 9 L9 9"/></svg></button>
     </div>
@@ -1186,6 +1186,41 @@ const AREAS = [
   { from: 51, to: 70, name: 'Zealandia', line: 'Tiptoe past the kākā and the takahē.', col: '#3F9A5B', icon: 'fern' },
   { from: 71, to: 9999, name: 'Red Rocks', line: 'Seals, wind and the trickiest puzzles of all.', col: '#D96C6C', icon: 'rocks' }
 ];
+const AREA_LOOK = {
+  house: { sky: '#FFE3C7', ground: '#FFF4E6', road: '#F3C99A', props: ['flower', 'bush', 'cottage', 'flower', 'tree', 'bowl'] },
+  bucket: { sky: '#F8D3E6', ground: '#EEDDF6', road: '#D9C2E8', props: ['bucket', 'umbrella', 'cup', 'lamp', 'umbrella', 'cup'] },
+  cablecar: { sky: '#D7F0C6', ground: '#B9E2A6', road: '#E8F3C9', props: ['tree', 'flower', 'bush', 'cablecar', 'tree', 'flower'] },
+  bay: { sky: '#BFE6F3', ground: '#F5E3B5', road: '#FFF1CF', props: ['wave', 'boat', 'pohutukawa', 'wave', 'shell', 'boat'] },
+  hill: { sky: '#CDE6F6', ground: '#B6DCA2', road: '#E9F1D3', props: ['pine', 'rock', 'pine', 'cloud', 'tree', 'flag'] },
+  fern: { sky: '#A8D7A0', ground: '#7EBF85', road: '#CFE7C4', props: ['fern', 'kaka', 'pine', 'fern', 'bush', 'kaka'] },
+  rocks: { sky: '#F2D0C2', ground: '#C9DCE3', road: '#F6E5DA', props: ['rock', 'seal', 'wave', 'gull', 'rock', 'seal'] }
+};
+const PS2 = 'stroke="#2E2630" stroke-width="1.6" stroke-linejoin="round" stroke-linecap="round"';
+// little scenery drawings, each centred on 0,0 and about 40 across
+const PROP = {
+  flower: `<path d="M0 16 V2" stroke="#3F9A5B" stroke-width="2.4"/>${[0, 72, 144, 216, 288].map(a => `<circle cx="${(6 * Math.cos(a * Math.PI / 180)).toFixed(1)}" cy="${(-4 + 6 * Math.sin(a * Math.PI / 180)).toFixed(1)}" r="4.6" fill="#F28DB2" ${PS2}/>`).join('')}<circle cy="-4" r="3.4" fill="#F5C542"/>`,
+  bush: `<path d="M-16 12 Q-18 0 -8 -2 Q-4 -12 6 -6 Q16 -6 16 4 Q20 12 12 12 Z" fill="#6DBE6A" ${PS2}/><circle cx="-4" cy="2" r="2" fill="#E0475B"/><circle cx="7" cy="-1" r="2" fill="#E0475B"/>`,
+  tree: `<rect x="-3" y="2" width="6" height="16" rx="2" fill="#A87552" ${PS2}/><circle cy="-6" r="14" fill="#5DB35A" ${PS2}/><circle cx="-5" cy="-10" r="4" fill="#7FCB78"/>`,
+  pine: `<rect x="-2.5" y="8" width="5" height="10" fill="#A87552" ${PS2}/><path d="M0 -20 L12 -4 H6 L14 8 H-14 L-6 -4 H-12 Z" fill="#3F9A5B" ${PS2}/>`,
+  cottage: `<path d="M-14 0 L0 -13 L14 0" fill="#D96C6C" ${PS2}/><rect x="-11" y="-1" width="22" height="16" fill="#FFF8EE" ${PS2}/><rect x="-3" y="5" width="6" height="10" fill="#A87552" ${PS2}/>`,
+  bowl: `<path d="M-12 4 H12 L9 12 H-9 Z" fill="#9FA8B5" ${PS2}/><path d="M-9 4 Q0 -4 9 4" fill="#E8873A"/>`,
+  bucket: `<g transform="rotate(-14)"><path d="M-10 -8 H10 L8 10 H-8 Z" fill="#F5C542" ${PS2}/><path d="M-10 -8 Q0 -16 10 -8" fill="none" ${PS2}/></g><path d="M10 -4 Q16 4 12 12" stroke="#5DADE2" stroke-width="2.4" fill="none" stroke-linecap="round"/>`,
+  umbrella: `<path d="M0 -2 V16 Q0 19 -3 18" fill="none" stroke="#2E2630" stroke-width="2"/><path d="M-16 -2 Q-14 -16 0 -16 Q14 -16 16 -2 Q12 -6 8 -2 Q4 -6 0 -2 Q-4 -6 -8 -2 Q-12 -6 -16 -2Z" fill="#4BB6AF" ${PS2}/>`,
+  cup: `<path d="M-9 -6 H9 L7 10 H-7 Z" fill="#FFFFFF" ${PS2}/><path d="M9 -2 Q15 -2 13 4 Q11 7 8 6" fill="none" ${PS2}/><rect x="-9" y="-1" width="18" height="5" fill="#A87552"/><path d="M-3 -10 Q-1 -14 -3 -18 M3 -10 Q5 -14 3 -18" stroke="#B0A8A8" stroke-width="1.6" fill="none" stroke-linecap="round"/>`,
+  lamp: `<path d="M0 18 V-10 Q0 -16 6 -16" fill="none" stroke="#2E2630" stroke-width="2.4"/><path d="M2 -16 H12 L10 -10 H4 Z" fill="#F5C542" ${PS2}/><circle cx="7" cy="-7" r="5" fill="#F5C542" opacity=".35"/>`,
+  cablecar: `<path d="M-20 -14 L20 2" stroke="#5A6B7A" stroke-width="1.8"/><g transform="rotate(22)"><rect x="-11" y="-6" width="22" height="14" rx="3" fill="#D63B3B" ${PS2}/><rect x="-7" y="-3" width="6" height="5" fill="#FFF3E2"/><rect x="2" y="-3" width="6" height="5" fill="#FFF3E2"/></g>`,
+  wave: `<path d="M-18 4 Q-12 -4 -6 4 T6 4 T18 4" stroke="#3E9BD1" stroke-width="3" fill="none" stroke-linecap="round"/><path d="M-12 12 Q-6 6 0 12 T12 12" stroke="#7CC3E8" stroke-width="2.4" fill="none" stroke-linecap="round"/>`,
+  boat: `<path d="M-14 6 H14 L9 13 H-9 Z" fill="#D96C6C" ${PS2}/><path d="M0 4 V-16 L12 2 Z" fill="#FFFFFF" ${PS2}/><path d="M-1 -12 L-10 2 H-1" fill="#F5C542" ${PS2}/>`,
+  pohutukawa: `<rect x="-3" y="2" width="6" height="16" rx="2" fill="#8C5A3C" ${PS2}/><circle cy="-6" r="14" fill="#3F8F4E" ${PS2}/>${[[-6, -12], [5, -10], [-8, -2], [6, 0], [0, -4], [-1, -15]].map(([x, y]) => `<circle cx="${x}" cy="${y}" r="2.6" fill="#E0373D"/>`).join('')}`,
+  shell: `<path d="M-10 8 Q0 -14 10 8 Z" fill="#F7B9A6" ${PS2}/><path d="M-5 7 L-2 -2 M0 7 V-4 M5 7 L2 -2" stroke="#2E2630" stroke-width="1.2"/>`,
+  rock: `<path d="M-16 12 L-12 -2 L-2 -8 L10 -4 L16 12 Z" fill="#B9AFA6" ${PS2}/><path d="M-6 -3 L2 2" stroke="#8C8279" stroke-width="1.6"/>`,
+  cloud: `<path d="M-16 6 Q-18 -4 -8 -4 Q-6 -12 4 -10 Q12 -12 14 -2 Q20 0 16 6 Z" fill="#FFFFFF" ${PS2}/>`,
+  flag: `<path d="M-6 16 V-16" stroke="#2E2630" stroke-width="2.2"/><path d="M-6 -16 L12 -10 L-6 -4 Z" fill="#E8873A" ${PS2}/><path d="M-14 16 H2" stroke="#2E2630" stroke-width="2.2" stroke-linecap="round"/>`,
+  fern: `<path d="M0 18 C0 4 -2 -6 6 -14 C10 -18 15 -14 12 -10 C10 -8 7 -9 8 -12" stroke="#2F7D45" stroke-width="2.6" fill="none" stroke-linecap="round"/><path d="M0 12 L-9 7 M0 5 L-9 -1 M1 -2 L-6 -9 M0 12 L8 9 M1 5 L10 2 M3 -3 L10 -5" stroke="#5DB35A" stroke-width="2.6" stroke-linecap="round"/>`,
+  kaka: `<ellipse cx="0" cy="2" rx="9" ry="11" fill="#8C5A3C" ${PS2}/><circle cy="-10" r="7" fill="#A87552" ${PS2}/><path d="M6 -11 Q11 -9 7 -5" fill="#E8C76A" ${PS2}/><circle cx="2" cy="-11" r="1.4" fill="#2E2630"/><path d="M-6 6 Q0 12 6 6" fill="#D9542A"/><path d="M-3 13 V18 M3 13 V18" stroke="#2E2630" stroke-width="1.6"/>`,
+  seal: `<path d="M-18 12 Q-14 -2 0 -2 Q8 -14 14 -8 Q16 -4 12 0 Q16 8 12 12 Z" fill="#7E8691" ${PS2}/><circle cx="10" cy="-8" r="1.3" fill="#2E2630"/><path d="M-18 12 L-22 6 M-18 12 L-22 16" stroke="#2E2630" stroke-width="1.6"/>`,
+  gull: `<path d="M-14 0 Q-7 -8 0 0 Q7 -8 14 0" stroke="#2E2630" stroke-width="2.4" fill="none" stroke-linecap="round"/>`
+};
 const areaFor = L => AREAS.find(a => L >= a.from && L <= a.to);
 const S2 = 'stroke="#2E2630" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"';
 const AREA_ICON = {
@@ -1715,7 +1750,7 @@ $('scoresBtn').onclick = () => { Sound.unlock(); Sound.ui(); Haptic.tick(); show
 $('settingsBtn').onclick = () => { Sound.unlock(); Sound.ui(); Haptic.tick(); show('settings'); };
 let logoTaps = 0, logoTimer = 0;
 $('ver').onclick = () => { logoTaps++; clearTimeout(logoTimer); logoTimer = setTimeout(() => logoTaps = 0, 1200);
-  if (logoTaps >= 5) { S().dev = !S().dev; Store.save(); logoTaps = 0; $('ver').textContent = 'Tucker Arcade · v1.22' + (S().dev ? ' · test mode' : ''); Haptic.success(); } };
+  if (logoTaps >= 5) { S().dev = !S().dev; Store.save(); logoTaps = 0; $('ver').textContent = 'Tucker Arcade · v1.23' + (S().dev ? ' · test mode' : ''); Haptic.success(); } };
 // blink on home
 $('homeCat').innerHTML = nibSVG();
 document.addEventListener('pointermove', e => { if (!$('home').hidden) Nib.lookAt($('homeCat').firstChild, e.clientX, e.clientY, 900); });
@@ -1726,25 +1761,58 @@ function renderLevels() {
   const me = Store.me, top = maxUnlocked(me), next = nextLevelFor(me);
   $('levelsTitle').textContent = Store.data.player + "'s journey";
   const g = $('levelGrid'); g.innerHTML = '';
-  const W = Math.min(g.clientWidth || 360, 520), STEP = 70, R0 = 23;
+  const W = Math.min(g.clientWidth || 360, 520), STEP = 78, R0 = 25, HEAD = 96;
   const lastShown = Math.max(next + 6, 75, S().dev ? 100 : 0);
-  let curEl = null;
+  let curEl = null, seed = 7;
+  const rnd = () => { seed = (seed * 16807) % 2147483647; return seed / 2147483647; };
   for (const a of AREAS) {
     if (a.from > lastShown) break;
+    const look = AREA_LOOK[a.icon];
     const to = Math.min(a.to, lastShown), n = to - a.from + 1;
     const doneN = Object.keys(me.done).filter(L => +L >= a.from && +L <= a.to).length;
-    const reached = a.from <= top;
-    const sec = document.createElement('div'); sec.className = 'area' + (reached ? '' : ' far');
+    const reached = a.from <= top, N = Engine.levelSpec(a.from).N;
+    const H = HEAD + n * STEP + 26;
+    const pts = [];
+    for (let k = 0; k < n; k++) { const L = a.from + k; pts.push([W / 2 + Math.sin(L * .85) * (W * .27), HEAD + 30 + k * STEP]); }
+    // road enters at the top and leaves at the bottom so areas join up
+    const top0 = [W / 2 + Math.sin((a.from - .5) * .85) * (W * .27), -10], end = [W / 2 + Math.sin((to + .5) * .85) * (W * .27), H + 10];
+    const all = [top0, ...pts, end];
+    let d = `M${all[0][0].toFixed(1)} ${all[0][1]}`;
+    for (let k = 1; k < all.length; k++) { const [x0, y0] = all[k - 1], [x1, y1] = all[k], m = (y1 - y0) / 2; d += ` C${x0.toFixed(1)} ${y0 + m} ${x1.toFixed(1)} ${y1 - m} ${x1.toFixed(1)} ${y1}`; }
+    // scenery on the open side of each bend
+    let scenery = '';
+    for (let k = 0; k < n; k++) {
+      const [x, y] = pts[k], left = x > W / 2;
+      const span = left ? [24, x - 62] : [x + 62, W - 24];
+      if (span[1] - span[0] < 10) continue;
+      const count = 1 + (rnd() < .55 ? 1 : 0);
+      for (let c = 0; c < count; c++) {
+        const px = span[0] + rnd() * (span[1] - span[0]), py = y - 26 + rnd() * 52, sc = 1.05 + rnd() * .5;
+        const kind = look.props[(k * 2 + c + a.from) % look.props.length];
+        scenery += `<g transform="translate(${px.toFixed(1)} ${py.toFixed(1)}) scale(${sc.toFixed(2)})">${PROP[kind]}</g>`;
+      }
+    }
+    // rolling ground shapes for depth
+    let hills = '';
+    for (let y = HEAD + 40; y < H; y += 150) {
+      const s1 = rnd() > .5;
+      hills += `<path d="M${s1 ? -20 : W + 20} ${y + 80} Q${s1 ? W * .25 : W * .75} ${y - 10} ${s1 ? W * .55 : W * .45} ${y + 80} Z" fill="${look.ground}" opacity=".85"/>`;
+    }
+    const sec = document.createElement('div');
+    sec.className = 'area' + (reached ? '' : ' far');
     sec.style.setProperty('--ac', a.col);
-    const N = Engine.levelSpec(a.from).N;
-    sec.innerHTML = `<div class="area-head"><svg viewBox="0 0 64 64" aria-hidden="true">${AREA_ICON[a.icon]}</svg><div><b>${a.name}</b><small>${a.line}</small><small class="meta">${N} × ${N} boards · ${a.to > 999 ? `level ${a.from} onwards` : `levels ${a.from}–${a.to}`}${doneN ? ` · ${doneN} done` : ''}</small></div></div>`;
-    // winding path of level stops
-    const H = n * STEP + 20, pts = [];
-    for (let k = 0; k < n; k++) { const L = a.from + k; pts.push([W / 2 + Math.sin(L * .85) * (W * .3), 34 + k * STEP]); }
-    let d = `M${pts[0][0]} ${pts[0][1]}`;
-    for (let k = 1; k < n; k++) { const [x0, y0] = pts[k - 1], [x1, y1] = pts[k]; d += ` C${x0} ${y0 + STEP / 2} ${x1} ${y1 - STEP / 2} ${x1} ${y1}`; }
-    const path = document.createElement('div'); path.className = 'trail'; path.style.height = H + 'px';
-    path.innerHTML = `<svg width="${W}" height="${H}" aria-hidden="true"><path d="${d}" fill="none" stroke="var(--ac)" stroke-opacity=".45" stroke-width="5" stroke-dasharray="2 11" stroke-linecap="round"/></svg>`;
+    sec.style.height = H + 'px';
+    sec.innerHTML = `
+      <svg class="land" width="${W}" height="${H}" aria-hidden="true">
+        <defs><linearGradient id="bg${a.from}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${look.sky}"/><stop offset="1" stop-color="${look.ground}"/></linearGradient></defs>
+        <rect width="${W}" height="${H}" fill="url(#bg${a.from})"/>
+        ${hills}
+        <path d="${d}" fill="none" stroke="#FFFFFF" stroke-opacity=".75" stroke-width="30" stroke-linecap="round"/>
+        <path d="${d}" fill="none" stroke="${look.road}" stroke-width="24" stroke-linecap="round"/>
+        <path d="${d}" fill="none" stroke="#FFFFFF" stroke-width="3" stroke-dasharray="8 12" stroke-linecap="round" opacity=".9"/>
+        ${scenery}
+      </svg>
+      <div class="sign"><svg viewBox="0 0 64 64" aria-hidden="true">${AREA_ICON[a.icon]}</svg><div><b>${a.name}</b><small>${a.line}</small><small class="meta">${N} × ${N} · ${a.to > 999 ? `level ${a.from}+` : `levels ${a.from}–${a.to}`}${doneN ? ` · ${doneN} done` : ''}</small></div></div>`;
     for (let k = 0; k < n; k++) {
       const L = a.from + k, dn = me.done[L], locked = L > top, isNext = L === next && !dn;
       const b = document.createElement('button');
@@ -1755,10 +1823,10 @@ function renderLevels() {
       b.disabled = locked;
       b.setAttribute('aria-label', 'Level ' + L + (dn ? ', solved with ' + dn.fish + ' fish' : locked ? ', locked' : isNext ? ', next up' : ''));
       b.onclick = () => { Haptic.tick(); Game.start(L); };
-      path.appendChild(b);
+      sec.appendChild(b);
       if (isNext) curEl = b;
     }
-    sec.appendChild(path); g.appendChild(sec);
+    g.appendChild(sec);
   }
   if (curEl) requestAnimationFrame(() => { const scr = $('levels'); scr.scrollTop = curEl.offsetTop + curEl.closest('.area').offsetTop - scr.clientHeight / 2; });
 }
@@ -2006,7 +2074,6 @@ const Game = (() => {
   }
   function renderHud() {
     $('hudTime').textContent = tut ? '–' : fmtTime(G.elapsed);
-    $('hudScore').textContent = tut ? '–' : calcScore().total.toLocaleString();
     $('hudTimeLbl').textContent = !tut && G.usedAuto ? 'Time · Auto' : 'Time';
     $('undoBtn').disabled = !G.undo.length;
     const t = hintState ? hintState.tier : 0;
@@ -2031,7 +2098,6 @@ const Game = (() => {
       if (!G || tut || G.over || G.loading || document.hidden || $('game').hidden || !$('overlay').hidden) { lastTick = performance.now(); return; }
       const now = performance.now(); G.elapsed += (now - lastTick) / 1000; lastTick = now;
       $('hudTime').textContent = fmtTime(G.elapsed);
-      $('hudScore').textContent = calcScore().total.toLocaleString();
     }, 250);
   }
   function pause() { clearInterval(timerId); saveProgress(); }
@@ -2871,7 +2937,7 @@ function applyTheme() {
 applyTheme();
 syncHapLayer();
 matchMedia('(prefers-color-scheme: dark)').addEventListener?.('change', applyTheme);
-if (S().dev) $('ver').textContent = 'Tucker Arcade · v1.22 · test mode';
+if (S().dev) $('ver').textContent = 'Tucker Arcade · v1.23 · test mode';
 if (/[?&]dev=1/.test(location.search)) { S().dev = true; Store.save(); }
 show('home');
 Supply.prefetch(nextLevelFor(Store.me));
