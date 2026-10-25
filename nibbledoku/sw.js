@@ -1,5 +1,5 @@
 // Nibbledoku offline cache. Bump VERSION whenever index.html changes.
-const VERSION = 'nibbledoku-v24';
+const VERSION = 'nibbledoku-v26';
 const FILES = ['./', './index.html', './manifest.webmanifest', './icon-180.png', './icon-192.png', './icon-512.png'];
 
 self.addEventListener('install', e => {
@@ -18,6 +18,7 @@ self.addEventListener('fetch', e => {
   }
   if (url.origin !== location.origin) return;
   // network first for the page so updates arrive, cache when offline
-  e.respondWith(fetch(e.request).then(r => { const copy = r.clone(); caches.open(VERSION).then(c => c.put(e.request, copy)); return r; })
+  // always ask the website for the latest copy (skipping the browser's short-term cache), fall back to the saved one offline
+  e.respondWith(fetch(e.request, { cache: 'no-cache' }).then(r => { const copy = r.clone(); caches.open(VERSION).then(c => c.put(e.request, copy)); return r; })
     .catch(() => caches.match(e.request, { ignoreSearch: true }).then(hit => hit || caches.match('./index.html'))));
 });
