@@ -327,6 +327,38 @@ const DAILY_CFG = { cap: 6, colours: 8, hidden: 0, empties: 2 };
 
 
 
+// ---------- hint search: weighted A*, finds short, direct solutions ----------
+function countRuns(bolts) { let r = 0; for (const b of bolts) for (let i = 0; i < b.length; i++) if (i === 0 || b[i] !== b[i - 1]) r++; return r; }
+function bestPath(start, caps, N, budget) {
+  const W = 1.2, nc = new Set(start.flat()).size;
+  const canon = s => s.map((b, i) => (caps[i] === N ? '' : caps[i] + ':') + b.join(',')).sort().join('|');
+  const heap = [];
+  const push = x => { heap.push(x); let i = heap.length - 1; while (i) { const p = (i - 1) >> 1; if (heap[p].f <= heap[i].f) break; [heap[p], heap[i]] = [heap[i], heap[p]]; i = p; } };
+  const pop = () => { const t = heap[0], l = heap.pop(); if (heap.length) { heap[0] = l; let i = 0; for (;;) { const a = 2 * i + 1, b = a + 1; let m = i; if (a < heap.length && heap[a].f < heap[m].f) m = a; if (b < heap.length && heap[b].f < heap[m].f) m = b; if (m === i) break; [heap[m], heap[i]] = [heap[i], heap[m]]; i = m; } } return t; };
+  const best = new Map([[canon(start), 0]]);
+  push({ s: start, g: 0, f: W * (countRuns(start) - nc), path: null });
+  let n = 0;
+  while (heap.length && n++ < budget) {
+    const cur = pop(), s = cur.s;
+    if (isSolved(s, N)) { const out = []; for (let p = cur.path; p; p = p.prev) out.push(p.m); return out.reverse(); }
+    for (let a = 0; a < s.length; a++) {
+      if (!s[a].length) continue;
+      const uni = isUniform(s[a]);
+      for (let b = 0; b < s.length; b++) {
+        const k = moveCount(s, caps, N, a, b);
+        if (!k || (!s[b].length && uni)) continue;
+        const ns = s.slice(); ns[a] = s[a].slice(0, s[a].length - k); ns[b] = s[b].concat(s[a].slice(s[a].length - k));
+        const key = canon(ns), g = cur.g + 1;
+        if (best.has(key) && best.get(key) <= g) continue;
+        best.set(key, g);
+        push({ s: ns, g, f: g + W * (countRuns(ns) - nc), path: { m: [a, b, k], prev: cur.path } });
+      }
+    }
+  }
+  return null;
+}
+
+
 // ---------- storage ----------
 const TIER_DOT = ['#35c46a', '#25c0f0', '#ffc929', '#ff8a1f', '#e5383b'];
 const KEY = 'nuttybolts.v2', MAX_PLAYERS = 8;
@@ -824,7 +856,7 @@ function addBolt() {
 function hint() {
   if (!G || G.won || G.tut) return;
   if (G.sel >= 0) dropNut();
-  if (!G.plan || !G.plan.length) G.plan = solve(colsOf(), capsOf(), G.N, 150000);
+  if (!G.plan || !G.plan.length) G.plan = bestPath(colsOf(), capsOf(), G.N, 150000) || solve(colsOf(), capsOf(), G.N, 150000);
   const sol = G.plan;
   if (!sol || !sol.length) { toast('No way through from here. Try Undo, or add the extra bolt.'); sfx.bad(); return; }
   G.usedHint = true; G.hint = { a: sol[0][0], b: sol[0][1], t: performance.now() };

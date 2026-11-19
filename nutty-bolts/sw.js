@@ -1,5 +1,5 @@
 // Nutty Bolts offline cache. Bump VERSION whenever you upload a new index.html.
-const VERSION = 'nutty-bolts-v1';
+const VERSION = 'nutty-bolts-v2';
 const FILES = ['./', './index.html', './manifest.webmanifest', './icon-180.png', './icon-192.png', './icon-512.png'];
 
 self.addEventListener('install', e => {
