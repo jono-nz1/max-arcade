@@ -117,7 +117,7 @@ canvas#fx{pointer-events:none;z-index:4}
   <div class="logo pass">SLING<span>KART</span></div>
   <div class="tag pass">Pull back. Let go. Fly over the hills.</div>
   <div class="players" id="playerBtns"></div>
-  <div class="version pass">Sling Kart v2.2 · 20 Nov 2026, 7:43pm</div>
+  <div class="version pass">Sling Kart v2.3 · 20 Nov 2026, 7:48pm</div>
 </div>
 
 <div id="garage" class="screen">
@@ -133,7 +133,7 @@ canvas#fx{pointer-events:none;z-index:4}
     <button class="mbtn danger" id="mResetAll">Reset everyone</button>
     <button class="mbtn" id="mMute">Sound: on</button>
     <button class="mbtn ghost" id="mClose">Close</button>
-    <div class="version" style="margin-top:2px">Sling Kart v2.2 · 20 Nov 2026, 7:43pm</div>
+    <div class="version" style="margin-top:2px">Sling Kart v2.3 · 20 Nov 2026, 7:48pm</div>
   </div>
   <div class="carname" id="gCar">Cardboard Cart</div>
   <div class="bestline pass" id="gBest">Best: 0 m</div>
@@ -1564,18 +1564,29 @@ function makeFinish(s, anims) {
   const grp = new THREE.Group(), f = frame(s, {}), W = LANE + 2;
   const postM = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.4 }), chq = new THREE.MeshStandardMaterial({ map: chequerTex, roughness: 0.6 });
   for (const sd of [-1, 1]) {
-    const p = new THREE.Mesh(new THREE.CylinderGeometry(0.4, 0.5, 10, 10), postM); p.position.set(sd * W, 5, 0); p.castShadow = true; grp.add(p);
+    const gy = offY(s, sd * W); // posts stand on the ground either side, even where it tilts
+    const p = new THREE.Mesh(new THREE.CylinderGeometry(0.4, 0.5, 10 - gy, 10), postM); p.position.set(sd * W, gy + (10 - gy) / 2, 0); p.castShadow = true; grp.add(p);
     const fp = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.06, 4, 6), postM); fp.position.set(sd * W, 12, 0); grp.add(fp);
     const flag = new THREE.Mesh(new THREE.PlaneGeometry(2.2, 1.4, 8, 2), new THREE.MeshStandardMaterial({ map: chequerTex, side: THREE.DoubleSide })); flag.position.set(sd * W + 1.1, 13.2, 0); grp.add(flag);
     const base = flag.geometry.attributes.position.array.slice();
     anims.push(t => { const pa = flag.geometry.attributes.position; for (let i = 0; i < pa.count; i++) { const x = base[i * 3]; pa.array[i * 3 + 2] = Math.sin(x * 3 - t * 6 + sd) * 0.15 * (x + 1.1); } pa.needsUpdate = true; });
   }
-  const tex = makeLabelTex('🏁 FINISH 🏁', 0xffffff, 0xe8243a, 1024, 180, 120);
+  // banner: chequered all the way across, with FINISH in the middle
+  const tex = canvasTex(1024, 128, (g, w, h) => {
+    const q = 32; for (let y = 0; y < h; y += q) for (let x = 0; x < w; x += q) { g.fillStyle = ((x + y) / q) % 2 ? '#111' : '#fff'; g.fillRect(x, y, q, q); }
+    const bw = 420, bx0 = (w - bw) / 2, r = 22; g.fillStyle = '#e8243a';
+    g.beginPath(); g.moveTo(bx0 + r, 10); g.arcTo(bx0 + bw, 10, bx0 + bw, h - 10, r); g.arcTo(bx0 + bw, h - 10, bx0, h - 10, r); g.arcTo(bx0, h - 10, bx0, 10, r); g.arcTo(bx0, 10, bx0 + bw, 10, r); g.fill();
+    g.fillStyle = '#fff'; g.font = '900 84px "Avenir Next", system-ui, sans-serif'; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText('FINISH', w / 2, h / 2 + 4);
+  });
   const ban = new THREE.Mesh(new THREE.BoxGeometry(2 * W + 1, 2.4, 0.4), [chq, chq, chq, chq, new THREE.MeshBasicMaterial({ map: tex }), new THREE.MeshBasicMaterial({ map: tex })]);
   ban.position.y = 9.3; ban.castShadow = true; ban.userData.tex = tex; grp.add(ban);
-  const line = new THREE.Mesh(new THREE.PlaneGeometry(2 * W, 1.6).rotateX(-Math.PI / 2), new THREE.MeshBasicMaterial({ map: chequerTex, polygonOffset: true, polygonOffsetFactor: -3 }));
+  // the line on the ground follows the ground's tilt from post to post, so none of it disappears
+  const lg = new THREE.PlaneGeometry(2 * W, 1.6, 44, 1).rotateX(-Math.PI / 2), lp = lg.attributes.position;
+  for (let i = 0; i < lp.count; i++) lp.setY(i, offY(s, lp.getX(i)) + 0.1);
+  lg.computeVertexNormals();
+  const line = new THREE.Mesh(lg, new THREE.MeshBasicMaterial({ map: chequerTex, polygonOffset: true, polygonOffsetFactor: -3 }));
   line.material.map = chequerTex.clone(); line.material.map.repeat.set(4, 1); line.material.map.needsUpdate = true;
-  line.position.y = 0.08; grp.add(line);
+  grp.add(line);
   grp.position.set(f.x, trackH(s), f.z);
   grp.rotation.y = Math.atan2(-f.fx, -f.fz);
   return grp;
@@ -2297,7 +2308,7 @@ function endRun() {
   P.stars += total; P.runs++; if (isBest) P.bestW[P.world] = dist; persist();
   $('rDist').textContent = dist; $('rDS').textContent = ds; $('rPS').textContent = `${runStars} × 2`; $('rMul').textContent = `×${mult.toFixed(1)}`; $('rTot').textContent = fmt(total);
   $('rBest').innerHTML = (isBest ? '<span class="newbest">NEW BEST!</span>' : `<div style="opacity:.8;font-weight:700;margin-top:6px">Best ${bestNow()} m</div>`);
-  placeStopFlag(car.maxS, car.x, dist);
+  if (!finished) placeStopFlag(car.maxS, car.x, dist); // the finish line is the celebration
   if (isBest) setTimeout(() => sfx.best(), 400);
   show('none');
   setTimeout(() => {
