@@ -117,7 +117,7 @@ canvas#fx{pointer-events:none;z-index:4}
   <div class="logo pass">SLING<span>KART</span></div>
   <div class="tag pass">Pull back. Let go. Fly over the hills.</div>
   <div class="players" id="playerBtns"></div>
-  <div class="version pass">Sling Kart v2.1 · 20 Nov 2026, 7:36pm</div>
+  <div class="version pass">Sling Kart v2.2 · 20 Nov 2026, 7:43pm</div>
 </div>
 
 <div id="garage" class="screen">
@@ -133,7 +133,7 @@ canvas#fx{pointer-events:none;z-index:4}
     <button class="mbtn danger" id="mResetAll">Reset everyone</button>
     <button class="mbtn" id="mMute">Sound: on</button>
     <button class="mbtn ghost" id="mClose">Close</button>
-    <div class="version" style="margin-top:2px">Sling Kart v2.1 · 20 Nov 2026, 7:36pm</div>
+    <div class="version" style="margin-top:2px">Sling Kart v2.2 · 20 Nov 2026, 7:43pm</div>
   </div>
   <div class="carname" id="gCar">Cardboard Cart</div>
   <div class="bestline pass" id="gBest">Best: 0 m</div>
@@ -1549,7 +1549,7 @@ function makeRamp(rp) {
   return { mesh: g, data: { x, z, ux, uz, L, W, H, y0 } };
 }
 function rampAt(x, z, s) {
-  let h = 0; const k0 = Math.floor(s / CH);
+  let h = -Infinity; const k0 = Math.floor(s / CH);
   for (let k = k0 - 1; k <= k0 + 1; k++) { const ch = chunks.get(k); if (!ch || !ch.ramps) continue;
     for (const r of ch.ramps) {
       const dx = x - r.x, dz = z - r.z, u = dx * r.ux + dz * r.uz, w = -dx * r.uz + dz * r.ux;
