@@ -75,10 +75,10 @@ One `<script>` IIFE, in roughly this order:
 | # | World | Finish | Gravity (ground/air) | Climb scale | Rough | Areas |
 |---|---|---|---|---|---|---|
 | 1 | Countryside | 1300 m | 9.8 / 14 | 0.8 | 1.0 | Lakeside, Green Hills, Autumn Woods, Desert Canyon, Snowy Peaks, Volcano Valley |
-| 2 | Space | 1500 m | 5.5 / 7.5 | 2.0 | 1.0 | Launch Base, The Moon, Mars, Nebula |
-| 3 | Candy Land | 1900 m | 9.8 / 14 | 1.2 | 1.15 | Lollipop Meadow, Gumdrop Hills, Chocolate Valley, Ice-cream Peaks |
-| 4 | Block World | 2100 m | 9.8 / 14 | 1.35 | 1.15 | Grassland, Block Forest, Block Desert, Block Snow |
-| 5 | Cat Kingdom | 2600 m | 9.8 / 14 | 1.5 | 1.2 | Kitten Meadow, Yarn Hills, Fish Market Shore, Cat Castle |
+| 2 | Space | 1600 m | 6.0 / 8 | 2.1 | 1.05 | Launch Base, The Moon, Mars, Nebula |
+| 3 | Candy Land | 2000 m | 9.8 / 14 | 1.45 | 1.2 | Lollipop Meadow, Gumdrop Hills, Chocolate Valley, Ice-cream Peaks |
+| 4 | Block World | 2300 m | 9.8 / 14 | 1.6 | 1.25 | Grassland, Block Forest, Block Desert, Block Snow |
+| 5 | Cat Kingdom | 2600 m | 9.8 / 14 | 1.65 | 1.25 | Kitten Meadow, Yarn Hills, Fish Market Shore, Cat Castle |
 
 Each area (zone) defines: ground palette, trail colour, fog/sky/light colours, distant mountain colours, tree mix, landmark mix (`props`), ground detail style (`det`), optional weather (`snow`, `leaves`, `embers`, `sprinkles`, `petals`, `twinkle`) and flags (`mesa` tall rocks, `lava` glowing rocks). Areas blend over the 60 m before a boundary. There are no on-screen area names: the landscape tells you where you are, and a fanfare plays the first time you reach a new area.
 
@@ -96,13 +96,13 @@ Finishing a world: chequered finish gate, "WORLD COMPLETE!", confetti, finish bo
 | Boost | level 1 unlocks 1.0 s; +0.15 s per level; thrust `4.5 + 0.2·L` | `30 × 1.38^L` |
 | Earnings | star multiplier `1 + 0.3·L` | `14 × 1.42^L` |
 
-- Max level 35 each. The car body changes every 8 combined Wheels + Aero + Boost levels: Cardboard Cart → Go-Kart → Dune Buggy → Rocket Racer.
+- Max level 35 each. The car body changes every 8 combined Wheels + Aero + Boost levels: Cardboard Cart (box on pram wheels, marker-pen flames) → Go-Kart (shaped nose and side pods, number plate, twin exhausts) → Dune Buggy (curved roll cage, knobbly tyres, light bar, spare wheel) → Rocket Racer (sculpted body, canopy, wings, tail fin, twin jets, underglow). Bodies use `profileMesh` (an extruded side profile with rounded edges) and `tubeMesh`.
 - Stars: 1 per 2 m, plus 2 per star collected, × Earnings. Lucky spin wheel on a new best (×1.5 to ×5, free upgrade, or next run ×1.5).
-- **Boost pads** top up a slow car to `21 + 2 × world` m/s, or add +1 m/s if you're already faster. (They used to add a fixed +9 m/s, which made fast runs endless: one run went from 2.8 km to 24 km.)
-- **Balance target** from `balance-sim.js`, with upgrades spread evenly over the four performance upgrades. Finish reached at roughly this total number of levels: World 1 ≈ 56, World 2 ≈ 80, World 3 ≈ 96, World 4 ≈ 104, World 5 ≈ 128 (out of 140 possible).
+- **Boost pads**: one about every 360 m (every 6th chunk), each adding a fixed amount of energy: `speed = √(speed² + 300)`. That's a big kick when slow (10 → 20 m/s) and a smaller push when fast (30 → 34.6 m/s). History: a fixed +9 m/s made fast runs endless (2.8 km → 24 km in one run). "Top up to 21 m/s" then felt like nothing, and chained pads still let players skip World 2's difficulty.
+- **Balance target** from `balance-sim.js` (includes pads), with upgrades spread evenly over the four performance upgrades. Finish reached at roughly this total number of levels: World 1 ≈ 44, World 2 ≈ 68, World 3 ≈ 80, World 4 ≈ 92, World 5 ≈ 128 (out of 140 possible). Without hitting any pads it takes noticeably more.
 - A fresh Cardboard Cart goes about 60 m. Starter stars are hand-placed along the first 100 m so early runs earn something.
 
-Run the sim: `node src/balance-sim.js` (needs Node; no install).
+Run the sim: `node src/balance-sim.js '{"W":[...world phys...],"pad":{"every":360,"first":330,"C":300}}'` (needs Node; no install). It prints the upgrade total at which each world's finish is reached.
 
 ---
 
@@ -127,6 +127,7 @@ Run the sim: `node src/balance-sim.js` (needs Node; no install).
 
 ## Change log
 
+- **v2.5**: boost pads reworked (energy burst, one every ~360 m); Worlds 2 to 5 longer and steeper; all four cars redesigned.
 - **v2.4**: players are added per device (no built-in names); rename, colour and delete players; older saves become players automatically.
 - **v2.3**: finish line spans the whole gate on tilted ground; chequered banner; no distance flag at the finish.
 - **v2.2**: Free Drive fix: the car was floating on an invisible floor at height 0 over low valleys.

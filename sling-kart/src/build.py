@@ -8,7 +8,7 @@ Bump VERSION for each published update.
 """
 import datetime, os, zoneinfo
 
-VERSION = "2.4"
+VERSION = "2.5"
 
 here = os.path.dirname(os.path.abspath(__file__))
 now = datetime.datetime.now(zoneinfo.ZoneInfo("Pacific/Auckland"))
