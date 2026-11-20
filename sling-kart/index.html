@@ -117,7 +117,7 @@ canvas#fx{pointer-events:none;z-index:4}
   <div class="logo pass">SLING<span>KART</span></div>
   <div class="tag pass">Pull back. Let go. Fly over the hills.</div>
   <div class="players" id="playerBtns"></div>
-  <div class="version pass">Sling Kart v2.0 · 20 Nov 2026, 7:31pm</div>
+  <div class="version pass">Sling Kart v2.1 · 20 Nov 2026, 7:36pm</div>
 </div>
 
 <div id="garage" class="screen">
@@ -133,7 +133,7 @@ canvas#fx{pointer-events:none;z-index:4}
     <button class="mbtn danger" id="mResetAll">Reset everyone</button>
     <button class="mbtn" id="mMute">Sound: on</button>
     <button class="mbtn ghost" id="mClose">Close</button>
-    <div class="version" style="margin-top:2px">Sling Kart v2.0 · 20 Nov 2026, 7:31pm</div>
+    <div class="version" style="margin-top:2px">Sling Kart v2.1 · 20 Nov 2026, 7:36pm</div>
   </div>
   <div class="carname" id="gCar">Cardboard Cart</div>
   <div class="bestline pass" id="gBest">Best: 0 m</div>
@@ -529,7 +529,13 @@ function crossH(s, o) {
   const und = vnoise(s * 0.045 + 3, o * 0.11 + 5) * 0.55 * Math.min(1, Math.abs(o) / 4);
   return k * (tilt * o + und);
 }
-function crossSlope(s, o) { return (crossH(s, o + 0.5) - crossH(s, o - 0.5)); }
+function crossSlope(s, o) { return (offY(s, o + 0.5) - offY(s, o - 0.5)); }
+// height of the ground at (s, o) relative to the line you drive; used to sit the car on the real land when off the path
+function offY(s, o) {
+  if (Math.abs(o) < 10) return crossH(s, o);
+  let h = groundH(s, o); if (lakeW(s) > 0 && h < WATER_Y) h = WATER_Y - 0.25;
+  return h + 0.02 - trackH(s);
+}
 function lakeW(s) { return WORLD.lvl === 0 ? 1 - sstep(150, 205, s) : 0; }
 function landLevel(s) {
   if (s < MACRO_S) return 0;
@@ -1087,7 +1093,14 @@ function buildChunk(i) {
   for (const pd of padPlan) { group.add(makePad(pd.s, pd.x)); pads.push({ s: pd.s, x: pd.x, used: false }); }
   for (const pts of freePaths) group.add(makeTrailMesh(pts, 2.4));
   const ramps = [];
-  for (const rp of rampPlan) { const r = makeRamp(rp); group.add(r.mesh); ramps.push(r.data); }
+  for (const rp of rampPlan) {
+    const r = makeRamp(rp), d = r.data; group.add(r.mesh); ramps.push(d);
+    // the sides and back of a ramp are solid: you can only drive on from the front
+    const base = { t: 'b', px: d.x, pz: d.z, ux: d.ux, uz: d.uz, wx: -d.uz, wz: d.ux, top: d.y0 + d.H };
+    COLS.push(Object.assign({}, base, { mnU: d.L * 0.3, mxU: d.L, mnW: d.W / 2, mxW: d.W / 2 + 0.3 }));
+    COLS.push(Object.assign({}, base, { mnU: d.L * 0.3, mxU: d.L, mnW: -d.W / 2 - 0.3, mxW: -d.W / 2 }));
+    COLS.push(Object.assign({}, base, { mnU: d.L + 1.0, mxU: d.L + 1.3, mnW: -d.W / 2, mxW: d.W / 2, top: d.y0 + d.H * 0.8 })); // set back from the lip so take-offs are clean
+  }
   // distance signs every 100 m
   for (let d = Math.ceil((s0 - START_S) / 100) * 100; d < s0 + CH - START_S; d += 100) {
     if (d <= 0) continue;
@@ -1813,13 +1826,26 @@ const dust = new Particles(260, false);
 const glow = new Particles(320, true);
 
 /* ================= AUDIO ================= */
-let actx = null, muted = false, engine = null;
+let actx = null, muted = false, engine = null, NOISE = null;
 try { muted = localStorage.getItem('slinghills.muted') === '1'; } catch (e) {}
 function ac() {
-  if (!actx) { try { actx = new (window.AudioContext || window.webkitAudioContext)(); } catch (e) { return null; } }
-  if (actx.state === 'suspended') actx.resume();
+  if (!actx || actx.state === 'closed') { try { actx = new (window.AudioContext || window.webkitAudioContext)(); NOISE = null; engine = null; } catch (e) { return null; } }
+  if (actx.state !== 'running') { try { actx.resume(); } catch (e) {} }
   return actx;
 }
+// iPhones pause web audio after notifications, locking the screen or switching apps ('interrupted'),
+// and only let it restart from a tap. So: wake it on every touch and whenever the game comes back into view.
+function wakeAudio() {
+  if (!actx) return;
+  if (actx.state !== 'running') {
+    try { actx.resume().then(() => { // a silent blip helps iOS really restart output
+      const b = actx.createBuffer(1, 1, 22050), src = actx.createBufferSource(); src.buffer = b; src.connect(actx.destination); src.start();
+    }).catch(() => {}); } catch (e) {}
+  }
+}
+for (const ev of ['pointerdown', 'touchend', 'keydown']) document.addEventListener(ev, wakeAudio, true);
+document.addEventListener('visibilitychange', () => { if (!document.hidden) wakeAudio(); });
+addEventListener('pageshow', wakeAudio);
 function tone(f, dur, type = 'sine', vol = 0.12, f2 = null, delay = 0) {
   const a = ac(); if (!a || muted) return;
   const t = a.currentTime + delay, o = a.createOscillator(), g = a.createGain();
@@ -1835,7 +1861,6 @@ function noise(dur, vol = 0.2, freq = 800, type = 'lowpass') {
   src.buffer = buf; fl.type = type; fl.frequency.value = freq; g.gain.value = vol;
   src.connect(fl).connect(g).connect(a.destination); src.start();
 }
-let NOISE = null;
 function noiseBuf(a) {
   if (NOISE) return NOISE;
   const len = a.sampleRate * 2; NOISE = a.createBuffer(1, len, a.sampleRate); const d = NOISE.getChannelData(0);
@@ -1998,7 +2023,7 @@ function placeStopFlag(s, x, dist) {
   // just in front of the car's nose, along the way the car is pointing
   _a.set(0, 0, 1).applyQuaternion(carMesh.quaternion); _a.y = 0; _a.normalize();
   const ahead = carMesh.userData.front + 0.7, fs = s + ahead * 0.9;
-  g.position.set(carMesh.position.x + _a.x * ahead, trackH(fs) + crossH(fs, x) + 0.05, carMesh.position.z + _a.z * ahead);
+  g.position.set(carMesh.position.x + _a.x * ahead, trackH(fs) + offY(fs, x) + 0.05, carMesh.position.z + _a.z * ahead);
   g.rotation.y = Math.atan2(-f.fx, -f.fz);
   mast.scale.set(1, 0.001, 1);
   scene.add(g);
@@ -2031,7 +2056,7 @@ function updateStopFlag(dt) {
 /* ================= GAME STATE ================= */
 let mode = 'title'; // title, garage, aim, run, results
 const car = { s: START_S, y: trackH(START_S), u: 0, vs: 0, vy: 0, grounded: true, fuel: 0, air: 0, maxS: START_S, x: 0, psi: 0, steer: 0, steerVis: 0, offPath: 0, lastImpact: 0 };
-let finished = false, bonkCool = 0, carRoll = 0, speedFx = 0, fovKick = 0, launchPull = 0, runZone = 0, stats = carStats({ wheels: 0, aero: 0, boost: 0 }), runStars = 0, stopT = 0, runT = 0, pull = 0, boosting = false, keyBoost = false, shake = 0, pitch = 0, steerShown = 0, passedBest = false, boostKick = 0;
+let carYOff = 0, finished = false, bonkCool = 0, carRoll = 0, speedFx = 0, fovKick = 0, launchPull = 0, runZone = 0, stats = carStats({ wheels: 0, aero: 0, boost: 0 }), runStars = 0, stopT = 0, runT = 0, pull = 0, boosting = false, keyBoost = false, shake = 0, pitch = 0, steerShown = 0, passedBest = false, boostKick = 0;
 
 // boost gauge: the ring is split into 1-second stages; you see only the stages your car has earned
 const FUEL_COLS = ['#4cd964', '#ffe066', '#ffa63d', '#ff5a4a', '#c06bff', '#3fe0ff', '#ffffff'];
@@ -2423,7 +2448,7 @@ function tickFree(dt) {
   if (fd.grounded) {
     const yb = fd.y + fd.vy * dt - 0.5 * 14 * dt * dt;
     if (yb > gh + 0.05 && Math.abs(fd.v) > 6) { fd.grounded = false; fd.y = yb; }
-    else { fd.vy = (gh - fd.y) / Math.max(dt, 1e-3); fd.y = gh; }
+    else { fd.vy = Math.max(-20, Math.min(1 + Math.abs(fd.v) * 0.6, (gh - fd.y) / Math.max(dt, 1e-3))); fd.y = gh; } // capped, so a sudden step can't fling the car upwards
   } else {
     fd.vy -= 14 * dt; fd.y += fd.vy * dt;
     if (fd.y <= gh) { if (fd.vy < -6) { shake = Math.min(0.8, -fd.vy * 0.05); sfx.land(-fd.vy); for (let k = 0; k < 14; k++) landPuff(); } fd.y = gh; fd.vy = 0; fd.grounded = true; }
@@ -2505,7 +2530,7 @@ function tick(now) {
     // solid things: bump off them
     {
       frame(car.s, tmpF);
-      const px = tmpF.x + tmpF.rx * car.x, pz = tmpF.z + tmpF.rz * car.x, hit = collide(car.s, px, pz, car.y + crossH(car.s, car.x), 0.95);
+      const px = tmpF.x + tmpF.rx * car.x, pz = tmpF.z + tmpF.rz * car.x, hit = collide(car.s, px, pz, car.y + offY(car.s, car.x), 0.95);
       if (hit) {
         const dx = hit.nx * hit.d, dz = hit.nz * hit.d;
         car.x += dx * tmpF.rx + dz * tmpF.rz;
@@ -2520,15 +2545,20 @@ function tick(now) {
     const off = sstep(PATH_W - 0.4, PATH_W + 1.2, Math.abs(car.x));
     car.offPath = off;
     if (car.grounded && off > 0 && car.u > 0) car.u = Math.max(0, car.u - off * 1.1 * simDt);
-    if (Math.abs(car.x) > LANE) { // the edge of the open ground: slide along it
-      const sd = Math.sign(car.x); car.x = sd * LANE;
+    if (Math.abs(car.x) > 150) { // only the very edge of the world stops you
+      const sd = Math.sign(car.x); car.x = sd * 150;
       if (Math.sign(car.psi) === sd) car.psi *= Math.exp(-simDt * 6);
+    }
+    // rough country away from the path costs more; water is slow going
+    if (car.grounded && car.u > 0) {
+      const far = sstep(LANE, LANE + 25, Math.abs(car.x)), wet = lakeW(car.s) > 0 && groundH(car.s, car.x) < WATER_Y;
+      car.u = Math.max(0, car.u - (far * 1.4 + (wet ? 4 : 0)) * simDt);
     }
     // pickups
     for (const ch of chunks.values()) {
       for (const st of ch.stars) {
         if (!st.visible) continue;
-        if (Math.abs(st.userData.s - car.s) < 1.7 && Math.abs(st.userData.x - car.x) < 1.6 && Math.abs(st.userData.y - (car.y + crossH(car.s, car.x) + 0.8)) < 1.9) {
+        if (Math.abs(st.userData.s - car.s) < 1.7 && Math.abs(st.userData.x - car.x) < 1.6 && Math.abs(st.userData.y - (car.y + offY(car.s, car.x) + 0.8)) < 1.9) {
           st.visible = false; runStars++; sfx.star(); burst(st.position, 1, 0.85, 0.2, 10);
         }
       }
@@ -2573,7 +2603,8 @@ function tick(now) {
 
   // ----- place car -----
   frame(car.s, tmpF);
-  carPos.set(tmpF.x + tmpF.rx * car.x, car.y + (car.grounded || mode !== 'run' ? crossH(car.s, car.x) : crossH(car.s, car.x)), tmpF.z + tmpF.rz * car.x);
+  carYOff += (offY(car.s, car.x) - carYOff) * (Math.abs(car.x) < 10 ? 1 : 1 - Math.exp(-dt * 20)); // smooth over the small steps of the land mesh
+  carPos.set(tmpF.x + tmpF.rx * car.x, car.y + carYOff, tmpF.z + tmpF.rz * car.x);
   if (carMesh) {
     let tp;
     if (car.grounded) tp = Math.atan(dH(car.s)); else tp = Math.atan2(car.vy, Math.max(1, car.vs)) * 0.7;
@@ -2675,7 +2706,7 @@ function tick(now) {
     if (mode === 'aim' && pull > 0.8) shake = Math.max(shake, (pull - 0.8) * 0.25);
     // keep the camera above the ground behind the car
     const camS = car.s - back * 0.95;
-    camTarget.y = Math.max(camTarget.y, trackH(camS) + 1.6);
+    camTarget.y = Math.max(camTarget.y, trackH(camS) + offY(camS, car.x) + 1.6);
     lookTarget.set(carPos.x + camDir.x * 6, carPos.y + 1.1, carPos.z + camDir.z * 6);
     const k = mode === 'aim' ? 6 : 7;
     camera.position.lerp(camTarget, 1 - Math.exp(-dt * k));
