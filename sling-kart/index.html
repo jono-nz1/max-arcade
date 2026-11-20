@@ -32,6 +32,7 @@ canvas#fx{pointer-events:none;z-index:4}
 .topbar{width:100%;max-width:520px;display:flex;align-items:center;gap:10px}
 .chip{display:flex;align-items:center;gap:8px;padding:8px 14px 8px 8px;border-radius:999px;font-weight:800;font-size:16px;border:0;color:#fff;font-family:inherit}
 .dot{width:28px;height:28px;border-radius:50%;display:grid;place-items:center;font-size:14px;font-weight:900;box-shadow:inset 0 -3px 0 rgba(0,0,0,.2)}
+.version{margin-top:10px;font-size:12px;font-weight:700;opacity:.75;text-align:center;text-shadow:0 1px 3px rgba(0,0,0,.4)}
 .gear{margin-left:auto;padding:8px 12px;font-size:20px;line-height:1}
 .menu{display:none;position:absolute;top:calc(env(safe-area-inset-top) + 70px);right:16px;z-index:40;padding:14px;width:220px;flex-direction:column;gap:8px}
 .menu.on{display:flex}
@@ -116,6 +117,7 @@ canvas#fx{pointer-events:none;z-index:4}
   <div class="logo pass">SLING<span>KART</span></div>
   <div class="tag pass">Pull back. Let go. Fly over the hills.</div>
   <div class="players" id="playerBtns"></div>
+  <div class="version pass">Sling Kart v2.0 · 20 Nov 2026, 7:31pm</div>
 </div>
 
 <div id="garage" class="screen">
@@ -131,6 +133,7 @@ canvas#fx{pointer-events:none;z-index:4}
     <button class="mbtn danger" id="mResetAll">Reset everyone</button>
     <button class="mbtn" id="mMute">Sound: on</button>
     <button class="mbtn ghost" id="mClose">Close</button>
+    <div class="version" style="margin-top:2px">Sling Kart v2.0 · 20 Nov 2026, 7:31pm</div>
   </div>
   <div class="carname" id="gCar">Cardboard Cart</div>
   <div class="bestline pass" id="gBest">Best: 0 m</div>
