@@ -33,6 +33,16 @@ canvas#fx{pointer-events:none;z-index:4}
 .chip{display:flex;align-items:center;gap:8px;padding:8px 14px 8px 8px;border-radius:999px;font-weight:800;font-size:16px;border:0;color:#fff;font-family:inherit}
 .dot{width:28px;height:28px;border-radius:50%;display:grid;place-items:center;font-size:14px;font-weight:900;box-shadow:inset 0 -3px 0 rgba(0,0,0,.2)}
 .version{margin-top:10px;font-size:12px;font-weight:700;opacity:.75;text-align:center;text-shadow:0 1px 3px rgba(0,0,0,.4)}
+.addbtn{background:rgba(18,30,58,.45)!important;border:3px dashed rgba(255,255,255,.7);box-shadow:none;font-size:20px}
+.pform{position:fixed;inset:0;z-index:60;display:none;align-items:center;justify-content:center;background:rgba(0,0,0,.35);padding:20px}
+.pform.on{display:flex}
+.pformbox{width:100%;max-width:360px;padding:20px;display:flex;flex-direction:column;gap:14px}
+.pftitle{font-weight:900;font-size:24px;text-align:center}
+#pfName{font:inherit;font-weight:800;font-size:22px;padding:12px 14px;border-radius:14px;border:0;outline:none;color:#14203a;background:#fff;-webkit-user-select:text;user-select:text}
+.swatches{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
+.swatch{aspect-ratio:1;border-radius:50%;border:3px solid transparent;box-shadow:inset 0 -4px 0 rgba(0,0,0,.2)}
+.swatch.on{border-color:#fff;transform:scale(1.08)}
+.pfrow{display:grid;grid-template-columns:1fr 2fr;gap:10px;align-items:center}
 .gear{margin-left:auto;padding:8px 12px;font-size:20px;line-height:1}
 .menu{display:none;position:absolute;top:calc(env(safe-area-inset-top) + 70px);right:16px;z-index:40;padding:14px;width:220px;flex-direction:column;gap:8px}
 .menu.on{display:flex}
@@ -113,11 +123,18 @@ canvas#fx{pointer-events:none;z-index:4}
 <div id="touch"></div>
 <div id="loading">Loading…</div>
 
+<div id="pform" class="pform"><div class="panel pformbox">
+  <div class="pftitle" id="pfTitle">New player</div>
+  <input id="pfName" maxlength="12" placeholder="Name" autocomplete="off" autocorrect="off" spellcheck="false">
+  <div class="swatches" id="pfSwatches"></div>
+  <div class="pfrow"><button class="mbtn ghost" id="pfCancel">Cancel</button><button class="launch" id="pfOk" style="margin:0;font-size:20px;padding:12px">Add player</button></div>
+</div></div>
+
 <div id="title" class="screen">
   <div class="logo pass">SLING<span>KART</span></div>
   <div class="tag pass">Pull back. Let go. Fly over the hills.</div>
   <div class="players" id="playerBtns"></div>
-  <div class="version pass">Sling Kart v2.3 · 20 Nov 2026, 7:48pm</div>
+  <div class="version pass">Sling Kart v2.4 · 20 Nov 2026, 8:01pm</div>
 </div>
 
 <div id="garage" class="screen">
@@ -129,11 +146,13 @@ canvas#fx{pointer-events:none;z-index:4}
   <div class="menu panel" id="menu">
     <div style="font-weight:900;font-size:18px;margin-bottom:4px">Testing</div>
     <button class="mbtn" id="mAdd">+500 stars</button>
+    <button class="mbtn" id="mRename">Rename / colour</button>
     <button class="mbtn" id="mReset">Reset this player</button>
+    <button class="mbtn danger" id="mDelete">Delete this player</button>
     <button class="mbtn danger" id="mResetAll">Reset everyone</button>
     <button class="mbtn" id="mMute">Sound: on</button>
     <button class="mbtn ghost" id="mClose">Close</button>
-    <div class="version" style="margin-top:2px">Sling Kart v2.3 · 20 Nov 2026, 7:48pm</div>
+    <div class="version" style="margin-top:2px">Sling Kart v2.4 · 20 Nov 2026, 8:01pm</div>
   </div>
   <div class="carname" id="gCar">Cardboard Cart</div>
   <div class="bestline pass" id="gBest">Best: 0 m</div>
@@ -218,16 +237,24 @@ THREE.ColorManagement.legacyMode = false; // treat colour hex values as sRGB so 
 const $ = id => document.getElementById(id);
 
 /* ================= SAVE ================= */
-const PLAYERS = [
-  {id:'max',  name:'Max',  color:0x2f7cf6, css:'#2f7cf6'},
-  {id:'izzy', name:'Izzy', color:0xe0459b, css:'#e0459b'},
-  {id:'dad',  name:'Dad',  color:0x23a55a, css:'#23a55a'},
-  {id:'mum',  name:'Mum',  color:0xf08a24, css:'#f08a24'},
-];
+// Players are added on each device (no names are built into the game). They live in save._players;
+// each player's progress is save[player.id].
+const PLAYER_COLOURS = ['#2f7cf6', '#e0459b', '#23a55a', '#f08a24', '#8a5cf0', '#e8343a', '#14b8c8', '#d4a20a'];
+const MAX_PLAYERS = 8;
 const SAVE_KEY = 'slinghills.v1';
 let save = {};
 try { save = JSON.parse(localStorage.getItem(SAVE_KEY)) || {}; } catch (e) { save = {}; }
 function persist() { try { localStorage.setItem(SAVE_KEY, JSON.stringify(save)); } catch (e) {} }
+if (!Array.isArray(save._players)) { // older versions: turn any saved progress into players, so nothing is lost
+  save._players = []; let i = 0;
+  for (const k of Object.keys(save)) {
+    if (k.startsWith('_') || !save[k] || typeof save[k] !== 'object') continue;
+    save._players.push({ id: k, name: k.charAt(0).toUpperCase() + k.slice(1), css: PLAYER_COLOURS[i++ % PLAYER_COLOURS.length] });
+  }
+  persist();
+}
+const asPlayer = q => ({ id: q.id, name: q.name, css: q.css, color: parseInt(q.css.slice(1), 16) });
+const playerList = () => save._players.map(asPlayer);
 const WORLD_LENS = [1300, 1500, 1900, 2100, 2600]; // finish distance for each world
 function prof(id) {
   if (!save[id]) save[id] = { stars: 0, sling: 0, wheels: 0, aero: 0, boost: 0, earn: 0, runs: 0 };
@@ -1784,9 +1811,9 @@ function makeCar(tier, color) {
   return car;
 }
 let carMesh = null, carTier = -1;
-function setCarModel() {
+function setCarModel(force) {
   const t = tierOf(P);
-  if (carMesh && carTier === t && carMesh.userData.color === player.color) return;
+  if (!force && carMesh && carTier === t && carMesh.userData.color === player.color) return;
   if (carMesh) { scene.remove(carMesh); carMesh.traverse(o => { if (o.isMesh) { o.geometry.dispose(); } }); }
   carMesh = makeCar(t, player.color); carMesh.userData.color = player.color; carTier = t;
   scene.add(carMesh);
@@ -2099,14 +2126,53 @@ function toast(msg) { const t = $('toast'); t.textContent = msg; t.classList.rem
 
 function buildPlayerButtons() {
   const wrap = $('playerBtns'); wrap.innerHTML = '';
-  for (const p of PLAYERS) {
+  const list = playerList();
+  for (const p of list) {
     const pr = prof(p.id), b = document.createElement('button');
     b.className = 'pbtn'; b.style.background = `linear-gradient(${p.css}, ${shade(p.css, -0.25)})`;
     b.innerHTML = `${p.name}<small>${WORLDS[pr.unlocked].icon} World ${pr.unlocked + 1} · ★ ${fmt(pr.stars)}</small>`;
     b.onclick = () => { sfx.tap(); choosePlayer(p); };
     wrap.appendChild(b);
   }
+  if (list.length < MAX_PLAYERS) {
+    const a = document.createElement('button'); a.className = 'pbtn addbtn';
+    a.innerHTML = list.length ? '+ Add player' : '+ Add a player<small>to start playing</small>';
+    if (!list.length) a.style.gridColumn = '1 / -1';
+    a.onclick = () => { sfx.tap(); openPlayerForm(null); };
+    wrap.appendChild(a);
+  }
 }
+// add / rename a player
+let formEditing = null, formColour = PLAYER_COLOURS[0];
+function openPlayerForm(existing) {
+  formEditing = existing;
+  const used = save._players.map(q => q.css);
+  formColour = existing ? existing.css : (PLAYER_COLOURS.find(c => !used.includes(c)) || PLAYER_COLOURS[0]);
+  $('pfTitle').textContent = existing ? 'Rename player' : 'New player';
+  $('pfName').value = existing ? existing.name : '';
+  $('pfOk').textContent = existing ? 'Save' : 'Add player';
+  const sw = $('pfSwatches'); sw.innerHTML = '';
+  for (const c of PLAYER_COLOURS) {
+    const d = document.createElement('button'); d.className = 'swatch' + (c === formColour ? ' on' : ''); d.style.background = c;
+    d.onclick = () => { formColour = c; for (const x of sw.children) x.classList.toggle('on', x === d); sfx.tap(); };
+    sw.appendChild(d);
+  }
+  $('pform').classList.add('on'); setTimeout(() => $('pfName').focus(), 50);
+}
+function closePlayerForm() { $('pform').classList.remove('on'); $('pfName').blur(); }
+$('pfCancel').onclick = () => { sfx.tap(); closePlayerForm(); };
+$('pfOk').onclick = () => {
+  const name = $('pfName').value.trim().slice(0, 12);
+  if (!name) { $('pfName').focus(); return; }
+  if (formEditing) {
+    const q = save._players.find(q => q.id === formEditing.id); q.name = name; q.css = formColour; persist();
+    closePlayerForm(); player = asPlayer(q); setCarModel(true); refreshGarage(); return;
+  }
+  const id = 'p' + Date.now().toString(36);
+  save._players.push({ id, name, css: formColour }); prof(id); persist(); sfx.buy();
+  closePlayerForm(); buildPlayerButtons();
+};
+$('pfName').addEventListener('keydown', e => { if (e.key === 'Enter') $('pfOk').click(); });
 function shade(hex, amt) { const c = new THREE.Color(hex); c.offsetHSL(0, 0, amt * 0.5); return '#' + c.getHexString(); }
 function fmt(n) { return n >= 1e6 ? (n / 1e6).toFixed(1) + 'M' : n >= 1e4 ? (n / 1e3).toFixed(1) + 'k' : String(n); }
 
@@ -2176,8 +2242,13 @@ armConfirm($('mReset'), 'Reset this player', () => {
   save[player.id] = null; P = prof(player.id); persist(); sfx.buy();
   $('menu').classList.remove('on'); toGarage(); toast(`${player.name} reset`);
 });
+$('mRename').onclick = () => { sfx.tap(); $('menu').classList.remove('on'); openPlayerForm(save._players.find(q => q.id === player.id)); };
+armConfirm($('mDelete'), 'Delete this player', () => {
+  save._players = save._players.filter(q => q.id !== player.id); delete save[player.id]; persist(); sfx.tap();
+  $('menu').classList.remove('on'); mode = 'title'; buildPlayerButtons(); show('title');
+});
 armConfirm($('mResetAll'), 'Reset everyone', () => {
-  for (const k of Object.keys(save)) delete save[k]; P = prof(player.id); persist(); sfx.buy();
+  for (const k of Object.keys(save)) if (!k.startsWith('_')) delete save[k]; P = prof(player.id); persist(); sfx.buy();
   $('menu').classList.remove('on'); toGarage(); toast('Everyone reset');
 });
 $('mMute').onclick = () => { $('muteBtn').click(); $('mMute').textContent = 'Sound: ' + (muted ? 'off' : 'on'); };
@@ -2809,7 +2880,8 @@ function landPuff() {
 }
 
 /* ================= BOOT ================= */
-player = PLAYERS[0]; P = prof(player.id);
+player = playerList()[0] || { id: '', name: '', css: '#2f7cf6', color: 0x2f7cf6 };
+P = player.id ? prof(player.id) : { stars: 0, sling: 0, wheels: 0, aero: 0, boost: 0, earn: 0, runs: 0, bestW: [0], unlocked: 0, world: 0, zoneW: [] };
 setCarModel();
 updateChunks(START_S, 200);
 buildPlayerButtons();
@@ -2817,7 +2889,7 @@ show('title');
 requestAnimationFrame(t => { last = t; tick(t); });
 setTimeout(() => { $('loading').style.opacity = 0; setTimeout(() => $('loading').remove(), 500); }, 150);
 if ('serviceWorker' in navigator && location.protocol.startsWith('http')) addEventListener('load', () => navigator.serviceWorker.register('sw.js').catch(() => {}));
-window.__game = { frame, updateChunks, resetWorld, zoneAt, get stats() { return stats; }, camera, worldH, chunks, collide, enterFree, fd, car, get mode() { return mode; }, startAim, launch: (p = 1) => { pull = p; launch(); }, choosePlayer: i => choosePlayer(PLAYERS[i]), setBoost: b => { keyBoost = b; }, P: () => P, save };
+window.__game = { frame, updateChunks, resetWorld, zoneAt, get stats() { return stats; }, camera, worldH, chunks, collide, enterFree, fd, car, get mode() { return mode; }, startAim, launch: (p = 1) => { pull = p; launch(); }, choosePlayer: i => { while (playerList().length <= i) { const id = 'test' + playerList().length; save._players.push({ id, name: 'Test ' + (playerList().length + 1), css: PLAYER_COLOURS[playerList().length] }); } choosePlayer(playerList()[i]); }, setBoost: b => { keyBoost = b; }, P: () => P, save };
 })();
 </script>
 </body>
