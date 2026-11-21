@@ -38,8 +38,8 @@ canvas{position:absolute;inset:0;width:100%;height:100%;display:block;touch-acti
 .btn.alt{background:linear-gradient(#5b3f8f,#3b2766);box-shadow:0 4px 0 #22163d}
 .btn.gold{background:linear-gradient(var(--gold),var(--gold2));color:#3a1d00;box-shadow:0 4px 0 #9a5a00}
 .btn[disabled]{opacity:.45}
-#toast{position:absolute;left:50%;top:44%;transform:translate(-50%,-50%) scale(.8);opacity:0;
-  font-size:30px;font-weight:900;text-shadow:0 3px 0 #000a;pointer-events:none;transition:.25s;white-space:nowrap}
+#toast{position:absolute;left:50%;top:12%;transform:translate(-50%,-50%) scale(.8);opacity:0;
+  font-size:34px;font-weight:900;text-shadow:0 3px 0 #000a;pointer-events:none;transition:.25s;white-space:nowrap}
 #toast.show{opacity:1;transform:translate(-50%,-50%) scale(1)}
 .overlay{position:fixed;inset:0;background:#0b0616e6;display:none;align-items:center;justify-content:center;padding:16px;z-index:10}
 .overlay.show{display:flex}
@@ -53,17 +53,19 @@ table{width:100%;border-collapse:collapse;margin:8px 0;font-size:15px}
 td{padding:6px 4px;border-bottom:1px solid var(--line)}
 td:last-child{text-align:right;font-weight:800}
 .note{font-size:13px;color:var(--dim)}
-.stat{background:#1f1338;border-radius:14px;padding:10px 12px;margin:8px 0}
+.stat{background:#1f1338;border-radius:14px;padding:10px 12px;margin:8px 0;line-height:1.5}
 .stat b{color:var(--gold)}
 .bars{margin:8px 0}
 .barrow{display:flex;align-items:center;gap:8px;margin:6px 0;font-size:14px}
 .barrow .lab{width:92px;flex:none}
 .barrow .track{flex:1;height:16px;background:#1f1338;border-radius:8px;overflow:hidden}
-.barrow .fill{height:100%;border-radius:8px;background:var(--blue);transition:width .5s}
+.barrow .fill{display:block;height:100%;border-radius:8px;background:var(--blue);transition:width .5s}
 .barrow .num{width:64px;text-align:right;flex:none;font-weight:800}
-.seg{display:flex;background:#1f1338;border-radius:12px;padding:4px;gap:4px;margin:8px 0}
-.seg button{flex:1;padding:8px 4px;border-radius:9px;font-weight:800;font-size:14px;color:var(--dim);background:none}
-.seg button.on{background:var(--line);color:var(--ink)}
+.lanes{display:flex;align-items:flex-end;gap:4px;height:130px;margin:10px 0 4px;padding:0 2px}
+.lanes .col{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;height:100%}
+.lanes .pc{font-size:11px;color:var(--dim);margin-bottom:3px}
+.lanes .b{width:100%;border-radius:6px 6px 0 0;background:#6b5a8f;transition:height .5s}
+.lanes .v{font-weight:900;font-size:14px;margin-top:4px}
 </style>
 </head>
 <body>
@@ -84,15 +86,15 @@ td:last-child{text-align:right;font-weight:800}
 <div class="overlay show" id="intro"><div class="card">
   <h2>🎪 Laughing Clowns 🎪</h2>
   <div class="big">🤡🤡🤡</div>
-  <p>Pay $5 for <b>3 balls</b>. Tap a clown to throw. Get the ball in its mouth while it's looking at you!</p>
-  <p>Inside, the ball drops into a chute worth <b>1</b>, <b>3</b> or <b>5</b> points.</p>
+  <p>Pay $5 for <b>3 balls</b>. Tap a clown to pop a ball in its mouth.</p>
+  <p>The ball rattles down inside, then a <b>sliding chute</b> at the bottom drops it into a lane. The middle lanes are worth the most!</p>
   <table>
-    <tr><td>🧸 GIANT TEDDY</td><td>15 points</td></tr>
-    <tr><td>🐶 Medium plush</td><td>11 to 13</td></tr>
-    <tr><td>🔑 Tiny keyring</td><td>7 to 10</td></tr>
-    <tr><td>😶 Nothing</td><td>under 7</td></tr>
+    <tr><td>🧸 GIANT TEDDY</td><td>25+ points</td></tr>
+    <tr><td>🐶 Medium plush</td><td>15 to 24</td></tr>
+    <tr><td>🔑 Tiny keyring</td><td>10 to 14</td></tr>
+    <tr><td>😶 Nothing</td><td>under 10</td></tr>
   </table>
-  <p class="note">You've got $20 of pocket money. How hard can it be?</p>
+  <p class="note">You've got $20 of pocket money. Time it just right and you'll win, right?</p>
   <div class="row"><button class="btn gold" id="startBtn">Step right up!</button></div>
 </div></div>
 
@@ -123,17 +125,10 @@ td:last-child{text-align:right;font-weight:800}
 <!-- Odds Lab -->
 <div class="overlay" id="lab"><div class="card">
   <h2>🔬 Odds Lab</h2>
-  <p class="note" style="text-align:center">What's really going on inside the clowns</p>
-  <div class="stat">
-    Inside each clown, the chutes are <b>not</b> equal:<br>
-    1 point: <b>60%</b> of balls &nbsp; 3 points: <b>30%</b> &nbsp; 5 points: only <b>10%</b>
-  </div>
-  <p class="note">Throwing skill only gets the ball in the mouth. Which chute it falls into is pure luck.</p>
-  <div class="seg" id="skillSeg">
-    <button data-c="1">Perfect aim</button>
-    <button data-c="you" class="on">Your aim</button>
-    <button data-c="0.4">Kid aim</button>
-  </div>
+  <p class="note" style="text-align:center">The secret of the sliding chute</p>
+  <p>The chute <b>zooms</b> through the middle and <b>crawls</b> at the edges. Here's how much of the time it sits over each lane:</p>
+  <div class="lanes" id="laneChart"></div>
+  <p class="note">The ball also rattles around inside the clown for a random amount of time, so you can't time it. Watching the chute doesn't help!</p>
   <div class="stat" id="exact"></div>
   <h2 style="font-size:19px;margin-top:14px">Simulate games</h2>
   <div class="row" style="margin-top:6px">
@@ -152,20 +147,31 @@ td:last-child{text-align:right;font-weight:800}
 'use strict';
 const $=id=>document.getElementById(id);
 const PRICE=5, TOPUP=20;
-const CHUTES=[{v:1,w:.6},{v:5,w:.1},{v:3,w:.3}]; // drawn left to right; 5 is the narrow middle one
+const LANES=[1,2,3,5,10,5,3,2,1];
+const NL=LANES.length;
+const SWEEP_PERIOD=1.5;   // seconds for a full left-right-left sweep
+const SHAPE=0.7;          // < 1 makes the chute linger at the edges and zoom through the middle
 const PRIZES=[
-  {min:15,max:15,name:'GIANT TEDDY',icon:'🧸',value:15},
-  {min:11,max:13,name:'Medium plush',icon:'🐶',value:4},
-  {min:7,max:10,name:'Tiny keyring',icon:'🔑',value:0.5},
-  {min:0,max:6,name:'Nothing',icon:'😶',value:0},
+  {min:25,max:99,name:'GIANT TEDDY',icon:'🧸',value:15},
+  {min:15,max:24,name:'Medium plush',icon:'🐶',value:4},
+  {min:10,max:14,name:'Tiny keyring',icon:'🔑',value:0.5},
+  {min:0,max:9,name:'Nothing',icon:'😶',value:0},
 ];
 const prizeFor=s=>PRIZES.find(p=>s>=p.min&&s<=p.max);
 const fmt=n=>'$'+(Math.round(n*100)/100).toLocaleString('en-NZ',{minimumFractionDigits:n%1?2:0,maximumFractionDigits:2});
+const laneCol=v=>v===10?'#ffc93c':v===5?'#ff7a3c':v===3?'#3aa7ff':v===2?'#3fcf73':'#6b5a8f';
+
+// chute position as a fraction 0..1 across the lane centres, for a given phase
+function chuteU(phase){const s=Math.sin(phase);return (Math.sign(s)*Math.pow(Math.abs(s),SHAPE)+1)/2;}
+// lane under the chute for a given u (u=0 is the centre of lane 0, u=1 the centre of the last lane)
+function laneAt(u){return Math.max(0,Math.min(NL-1,Math.round(u*(NL-1))));}
+// true lane probabilities: share of time the chute spends over each lane
+const LANE_P=(()=>{const c=new Array(NL).fill(0),M=60000;for(let i=0;i<M;i++)c[laneAt(chuteU(2*Math.PI*i/M))]++;return c.map(v=>v/M);})();
 
 // ---------- persistent stats ----------
-let S={money:20,spent:0,games:0,throws:0,catches:0,prizes:{},prizeValue:0,topups:0};
-try{const s=JSON.parse(localStorage.getItem('clowns.v1'));if(s)S=Object.assign(S,s);}catch(e){}
-const save=()=>{try{localStorage.setItem('clowns.v1',JSON.stringify(S));}catch(e){}};
+let S={money:20,spent:0,games:0,prizes:{},prizeValue:0,topups:0};
+try{const s=JSON.parse(localStorage.getItem('clowns.v2'));if(s)S=Object.assign(S,s);}catch(e){}
+const save=()=>{try{localStorage.setItem('clowns.v2',JSON.stringify(S));}catch(e){}};
 
 // ---------- audio ----------
 let ac=null;
@@ -180,11 +186,11 @@ function tone(f,d=.08,type='square',vol=.06,slide=0){
   }catch(e){}
 }
 const sfx={
-  throw:()=>tone(500,.15,'triangle',.08,-300),
-  clack:()=>tone(1400+Math.random()*500,.03,'square',.03),
+  pop:()=>tone(500,.12,'triangle',.08,250),
+  clack:()=>tone(1200+Math.random()*700,.03,'square',.03),
   gulp:()=>{tone(300,.12,'sine',.12,300);setTimeout(()=>tone(700,.1,'sine',.1),90)},
-  miss:()=>tone(180,.25,'sawtooth',.06,-100),
-  land:v=>{[523,659,784,1047].slice(0,v===5?4:v===3?3:2).forEach((f,i)=>setTimeout(()=>tone(f,.12,'triangle',.08),i*80))},
+  roll:()=>tone(220,.2,'triangle',.05,80),
+  land:v=>{[523,659,784,1047,1319].slice(0,v>=10?5:v>=5?4:v>=3?3:2).forEach((f,i)=>setTimeout(()=>tone(f,.12,'triangle',.08),i*80))},
   fanfare:()=>[523,659,784,1047,784,1047].forEach((f,i)=>setTimeout(()=>tone(f,.18,'triangle',.1),i*130)),
   sad:()=>[392,349,330,262].forEach((f,i)=>setTimeout(()=>tone(f,.25,'triangle',.08),i*220)),
 };
@@ -199,21 +205,31 @@ function resize(){
 const N=3;
 const clowns=[];
 const colours=[{hair:'#ff7a1a',hat:'#3aa7ff',dot:'#ffc93c'},{hair:'#3fcf73',hat:'#e8343f',dot:'#fff'},{hair:'#c159ff',hat:'#ffc93c',dot:'#e8343f'}];
-for(let i=0;i<N;i++)clowns.push({i,phase:Math.random()*6,speed:1.8+Math.random()*.9,ang:0,x:0,y:0,r:0,col:colours[i],laugh:0,landed:[]});
+for(let i=0;i<N;i++)clowns.push({i,phase:Math.random()*6,speed:1.6+Math.random()*.8,ang:0,x:0,y:0,r:0,col:colours[i],laugh:0});
 let G={};
 function layout(){
   const colW=W/N;
-  const r=Math.min(colW*.36,H*.12);
-  G={colW,r,headY:Math.max(H*.08+r*2.3,H*.36-r*.5),boxTop:0,boxBot:0,ballX:W/2,ballY:H-Math.max(28,r*.55)};
-  G.boxTop=G.headY+r*1.05;G.boxBot=Math.min(G.boxTop+r*2.1,H*.72);
-  clowns.forEach((c,i)=>{c.x=colW*(i+.5);c.y=G.headY;c.r=r;});
+  const aw=H*.06;
+  const r=Math.min(colW*.33,H*.09);
+  // centre the whole machine in the space above the bottom counter strip
+  const machineH=r*2.1+8+r*1.75+r*.55+Math.max(12,r*.32)+r*.55+r*.25+r*3;
+  const headY=aw+r*2.1+8+Math.max(0,(H*.88-aw-machineH)/2);
+  const bodyBot=headY+r*1.75;
+  const troughY=bodyBot+r*.55, th=Math.max(12,r*.32);
+  const laneL=W*.04, laneR=W*.96, laneW=(laneR-laneL)/NL;
+  const spoutY=troughY+th, spoutH=r*.55;
+  const laneTop=spoutY+spoutH+r*.25;
+  const laneBot=Math.min(laneTop+r*3,H*.88);
+  G={colW,r,aw,headY,bodyBot,troughY,th,laneL,laneR,laneW,spoutY,spoutH,laneTop,laneBot,ballX:W/2,ballY:H-Math.max(26,r*.6)};
+  clowns.forEach((c,i)=>{c.x=colW*(i+.5);c.y=headY;c.r=r;});
 }
+const spoutX=()=>G.laneL+G.laneW/2+chuteU(sweepPhase)*(G.laneW*(NL-1));
 
 // ---------- game state ----------
 let balls=0,score=0,playing=false,busy=false;
-const flying=[];   // balls in flight
-const dropping=[]; // balls dropping inside a clown
-const bouncing=[]; // missed balls falling away
+let sweepPhase=Math.random()*6;
+let active=null;           // the ball currently in play
+let landed=[];             // balls sitting in lanes {k,dx}
 let t0=performance.now(),T=0;
 
 function updateHud(){
@@ -231,51 +247,50 @@ function startGame(){
   if(playing)return;
   if(S.money<PRICE){showBroke();return;}
   S.money-=PRICE;S.spent+=PRICE;save();
-  playing=true;balls=3;score=0;clowns.forEach(c=>c.landed=[]);
+  playing=true;balls=3;score=0;landed=[];
   tone(880,.08,'square',.05);setTimeout(()=>tone(1320,.1,'square',.05),80);
   updateHud();
 }
-function pickChute(){
-  let r=Math.random();
-  for(let k=0;k<CHUTES.length;k++){if((r-=CHUTES[k].w)<0)return k;}
-  return 0;
-}
-function throwAt(c){
+function dropIn(c){
   if(!playing||balls<=0||busy)return;
-  balls--;busy=true;updateHud();sfx.throw();
-  flying.push({c,t:0,dur:.5,sx:G.ballX,sy:G.ballY});
+  balls--;busy=true;updateHud();sfx.pop();
+  // stages: up (into mouth) -> inside (hidden, random rattle) -> fall (to trough) -> roll (to chute) -> drop (into lane)
+  active={c,stage:'up',t:0,sx:G.ballX,sy:G.ballY,inside:.7+Math.random()*1.3,nextClack:0};
 }
-function chuteRect(c,k){
-  const w=G.colW*.8,x0=c.x-w/2;
-  const widths=[.4,.2,.4];let x=x0;for(let j=0;j<k;j++)x+=w*widths[j];
-  return {x,w:w*widths[k],y:G.boxBot-G.r*.55,h:G.r*.55};
-}
-function resolveArrival(f){
-  const c=f.c,a=Math.abs(c.ang);
-  S.throws++;
-  if(a<.34){
-    S.catches++;c.laugh=1;sfx.gulp();
-    const k=pickChute(),cr=chuteRect(c,k);
-    const top=G.boxTop+G.r*.25;
-    // zigzag path through pegs
-    const pts=[{x:c.x,y:top}];const steps=4;
-    for(let s=1;s<steps;s++){
-      pts.push({x:c.x+(Math.random()-.5)*G.colW*.55,y:top+(cr.y-top)*(s/steps)});
+function step(dt){
+  const b=active;if(!b)return;
+  b.t+=dt;const c=b.c;
+  if(b.stage==='up'){
+    const p=Math.min(1,b.t/.4);
+    const tx=c.x+Math.sin(c.ang)*c.r*.66,ty=c.y+c.r*.42;
+    b.x=b.sx+(tx-b.sx)*p;b.y=b.sy+(ty-b.sy)*p-Math.sin(p*Math.PI)*H*.1;b.rad=G.r*.22*(1-p*.3);
+    if(p>=1){b.stage='inside';b.t=0;c.laugh=1;sfx.gulp();}
+  }else if(b.stage==='inside'){
+    b.nextClack-=dt;if(b.nextClack<=0){sfx.clack();b.nextClack=.12+Math.random()*.15;}
+    if(b.t>=b.inside){b.stage='fall';b.t=0;b.x=c.x;}
+  }else if(b.stage==='fall'){
+    const p=Math.min(1,b.t/.25);b.x=c.x;b.y=G.bodyBot+(G.troughY+G.th/2-G.bodyBot)*p*p;b.rad=G.r*.17;
+    if(p>=1){b.stage='roll';b.t=0;b.rx=c.x;sfx.roll();}
+  }else if(b.stage==='roll'){
+    const p=Math.min(1,b.t/.4),e=p*p*(3-2*p);
+    b.x=b.rx+(spoutX()-b.rx)*e;b.y=G.troughY+G.th/2;
+    if(p>=1){
+      b.stage='drop';b.t=0;b.x=spoutX();
+      b.k=laneAt((b.x-G.laneL-G.laneW/2)/(G.laneW*(NL-1)));
+      b.x=G.laneL+G.laneW*(b.k+.5);
     }
-    pts.push({x:cr.x+cr.w/2,y:cr.y+cr.h*.55});
-    dropping.push({c,k,pts,t:0,dur:1.1,hidden:.25,last:-1});
-  }else{
-    const close=a<.55;
-    sfx.miss();toast(close?'So close!':'Bonk!',close?'#ffc93c':'#ff8b8b');
-    bouncing.push({x:c.x+(Math.random()-.5)*c.r,y:c.y+c.r*.4,vx:(Math.random()-.5)*160,vy:-120,t:0});
-    setTimeout(afterBall,650);
+  }else if(b.stage==='drop'){
+    const p=Math.min(1,b.t/.35);const endY=G.laneBot-G.r*.2-countIn(b.k)*G.r*.3;
+    b.y=G.troughY+G.th/2+(endY-G.troughY-G.th/2)*p*p;
+    if(p>=1){
+      const v=LANES[b.k];score+=v;landed.push({k:b.k});
+      sfx.land(v);toast('+'+v,v>=10?'#ffc93c':v>=5?'#ff9a5c':'#fff');
+      active=null;busy=false;updateHud();
+      if(balls===0)setTimeout(endGame,700);
+    }
   }
-  save();
 }
-function afterBall(){
-  busy=false;updateHud();
-  if(balls===0)setTimeout(endGame,500);
-}
+const countIn=k=>landed.filter(l=>l.k===k).length;
 function endGame(){
   playing=false;S.games++;
   const p=prizeFor(score);
@@ -291,9 +306,8 @@ function endGame(){
   show('result');
 }
 function statsHtml(){
-  const rate=S.throws?Math.round(S.catches/S.throws*100):0;
   const pz=Object.entries(S.prizes).filter(([k])=>k!=='Nothing').map(([k,v])=>`${v} × ${k}`).join(', ')||'none yet';
-  return `Games played: <b>${S.games}</b><br>Money spent: <b>${fmt(S.spent)}</b><br>Prizes: <b>${pz}</b><br>Prizes worth about: <b>${fmt(S.prizeValue)}</b><br>Your aim: <b>${rate}%</b> of balls in a mouth`;
+  return `Games played: <b>${S.games}</b><br>Money spent: <b>${fmt(S.spent)}</b><br>Prizes: <b>${pz}</b><br>Prizes worth about: <b>${fmt(S.prizeValue)}</b>`;
 }
 function showBroke(){
   const lost=S.spent-S.prizeValue;
@@ -306,10 +320,9 @@ function hideAll(){document.querySelectorAll('.overlay').forEach(o=>o.classList.
 
 // ---------- input ----------
 cv.addEventListener('pointerdown',e=>{
-  const r=cv.getBoundingClientRect(),x=e.clientX-r.left,y=e.clientY-r.top;
+  const r=cv.getBoundingClientRect(),x=e.clientX-r.left;
   if(!playing){toast('Pay $5 first!','#ffc93c');return;}
-  if(y>G.boxBot+10)return;
-  throwAt(clowns[Math.max(0,Math.min(N-1,Math.floor(x/G.colW)))]);
+  dropIn(clowns[Math.max(0,Math.min(N-1,Math.floor(x/G.colW)))]);
 });
 $('startBtn').onclick=()=>{hideAll();tone(660,.1,'triangle',.06);};
 $('playBtn').onclick=startGame;
@@ -321,68 +334,46 @@ $('labClose').onclick=()=>{hideAll();updateHud();};
 // ---------- drawing ----------
 function rr(x,y,w,h,r){ctx.beginPath();ctx.moveTo(x+r,y);ctx.arcTo(x+w,y,x+w,y+h,r);ctx.arcTo(x+w,y+h,x,y+h,r);ctx.arcTo(x,y+h,x,y,r);ctx.arcTo(x,y,x+w,y,r);ctx.closePath();}
 function drawBooth(){
-  // background lights
   const g=ctx.createLinearGradient(0,0,0,H);g.addColorStop(0,'#2b1650');g.addColorStop(1,'#140a24');
   ctx.fillStyle=g;ctx.fillRect(0,0,W,H);
-  // awning stripes
-  const aw=H*.06,sw=W/10;
+  const aw=G.aw,sw=W/10;
   for(let i=0;i<10;i++){ctx.fillStyle=i%2?'#fff3e0':'#e8343f';ctx.fillRect(i*sw,0,sw+1,aw);
     ctx.beginPath();ctx.arc(i*sw+sw/2,aw,sw/2,0,Math.PI);ctx.fill();}
-  // bulbs
   for(let i=0;i<14;i++){const on=((T*4|0)+i)%3===0;ctx.fillStyle=on?'#ffe27a':'#7a5a20';
     ctx.beginPath();ctx.arc((i+.5)*W/14,aw+sw/2+8,3.5,0,7);ctx.fill();}
   // counter
-  ctx.fillStyle='#5a2a14';ctx.fillRect(0,G.boxBot+8,W,H-G.boxBot);
-  ctx.fillStyle='#7a3a1c';ctx.fillRect(0,G.boxBot+8,W,10);
-  // prize shelf text
-  ctx.fillStyle='#ffc93c';ctx.font=`800 ${Math.max(12,G.r*.28)}px ui-rounded,system-ui`;ctx.textAlign='center';
-  ctx.fillText('15 = 🧸   11+ = 🐶   7+ = 🔑',W/2,G.boxBot+H*.07);
+  const cy=G.laneBot+6;
+  ctx.fillStyle='#5a2a14';ctx.fillRect(0,cy,W,H-cy);
+  ctx.fillStyle='#7a3a1c';ctx.fillRect(0,cy,W,10);
+  ctx.fillStyle='#ffc93c';ctx.font=`800 ${Math.max(13,G.r*.3)}px ui-rounded,system-ui`;ctx.textAlign='center';
+  ctx.fillText('25+ = 🧸   15+ = 🐶   10+ = 🔑',W/2,cy+Math.max(34,G.r*.75));
 }
-function drawCabinet(c){
-  const w=G.colW*.8,x=c.x-w/2,y=G.boxTop,h=G.boxBot-G.boxTop;
-  // body (clown suit)
+function drawBody(c){
+  const w=G.colW*.62,x=c.x-w/2,y=c.y+c.r*.9,h=G.bodyBot-y;
+  // pipe down to the trough
+  ctx.fillStyle='#2a1a47';ctx.fillRect(c.x-G.r*.2,G.bodyBot-4,G.r*.4,G.troughY-G.bodyBot+6);
+  ctx.fillStyle='#46306e';ctx.fillRect(c.x-G.r*.2,G.bodyBot-4,G.r*.07,G.troughY-G.bodyBot+6);
+  // suit
   ctx.fillStyle='#3b2766';rr(x,y,w,h,12);ctx.fill();
   ctx.save();rr(x,y,w,h,12);ctx.clip();
-  ctx.fillStyle=c.col.hat+'33';
-  for(let i=0;i<8;i++)for(let j=0;j<6;j++){ctx.beginPath();ctx.arc(x+i*w/6,y+j*h/4+(i%2)*h/8,4,0,7);ctx.fill();}
+  ctx.fillStyle=c.col.hat+'55';
+  for(let i=0;i<6;i++)for(let j=0;j<4;j++){ctx.beginPath();ctx.arc(x+i*w/5,y+j*h/3+(i%2)*h/6,4,0,7);ctx.fill();}
   ctx.restore();
-  // window with pegs
-  const wx=x+w*.08,wy=y+G.r*.15,ww=w*.84,wh=h-G.r*.15-G.r*.6;
-  ctx.fillStyle='#120a20';rr(wx,wy,ww,wh+G.r*.55,8);ctx.fill();
-  ctx.fillStyle='#8f7bb8';
-  for(let row=0;row<3;row++)for(let k=0;k<4;k++){
-    const px=wx+ww*((k+.5+(row%2?.5:0))/4.5)+ww*.03,py=wy+wh*(.25+row*.25);
-    ctx.beginPath();ctx.arc(px,py,2.5,0,7);ctx.fill();
-  }
-  // chutes
-  for(let k=0;k<3;k++){
-    const cr=chuteRect(c,k);
-    ctx.fillStyle=CHUTES[k].v===5?'#ffc93c':CHUTES[k].v===3?'#3aa7ff':'#6b5a8f';
-    rr(cr.x+1.5,cr.y,cr.w-3,cr.h,5);ctx.fill();
-    ctx.fillStyle=CHUTES[k].v===5?'#3a1d00':'#fff';
-    ctx.font=`900 ${Math.max(12,G.r*.32)}px ui-rounded,system-ui`;ctx.textAlign='center';ctx.textBaseline='middle';
-    ctx.fillText(CHUTES[k].v,cr.x+cr.w/2,cr.y+cr.h*.5);
-  }
-  ctx.textBaseline='alphabetic';
-  // landed balls
-  c.landed.forEach(L=>{const cr=chuteRect(c,L.k);drawBall(cr.x+cr.w/2+L.dx,cr.y+cr.h*.2,G.r*.16);});
+  // buttons
+  for(let j=0;j<2;j++){ctx.fillStyle=c.col.dot;ctx.beginPath();ctx.arc(c.x,y+h*(.4+j*.3),G.r*.08,0,7);ctx.fill();}
   // ruffle collar
   for(let i=0;i<6;i++){ctx.fillStyle=i%2?'#fff':c.col.dot;ctx.beginPath();ctx.arc(c.x-G.r*.9+i*G.r*.36,y+2,G.r*.22,Math.PI,0);ctx.fill();}
 }
 function drawHead(c){
   const {x,y,r}=c,a=c.ang,f=Math.sin(a),sc=Math.max(.12,Math.cos(a));
-  // hair tufts (stay fixed-ish, shift opposite)
   ctx.fillStyle=c.col.hair;
   for(const s of[-1,1]){const hx=x+s*r*.92-f*r*.15;
     for(let k=0;k<3;k++){ctx.beginPath();ctx.arc(hx+s*r*.12,y-r*.25+k*r*.28,r*.28,0,7);ctx.fill();}}
-  // face
   const fg=ctx.createRadialGradient(x+f*r*.3,y-r*.3,r*.1,x,y,r);fg.addColorStop(0,'#ffffff');fg.addColorStop(1,'#f1dcc8');
   ctx.fillStyle=fg;ctx.beginPath();ctx.arc(x,y,r,0,7);ctx.fill();
   const fx=x+f*r*.62;
-  // hat
   ctx.fillStyle=c.col.hat;ctx.beginPath();ctx.moveTo(x-r*.55+f*r*.2,y-r*.78);ctx.lineTo(x+r*.55+f*r*.2,y-r*.78);ctx.lineTo(x+f*r*.45,y-r*1.75);ctx.closePath();ctx.fill();
   ctx.fillStyle=c.col.dot;ctx.beginPath();ctx.arc(x+f*r*.45,y-r*1.78,r*.15,0,7);ctx.fill();
-  // eyes
   const laugh=c.laugh>0;
   for(const s of[-1,1]){
     const ex=fx+s*r*.34*sc,ey=y-r*.25;
@@ -392,13 +383,38 @@ function drawHead(c){
     if(laugh){ctx.lineWidth=3;ctx.strokeStyle='#111';ctx.beginPath();ctx.arc(ex,ey+r*.05,r*.09*sc,Math.PI,0);ctx.stroke();}
     else{ctx.beginPath();ctx.arc(ex+f*r*.04,ey+r*.02,r*.06*sc,0,7);ctx.fill();}
   }
-  // mouth (the target)
   const mx=x+f*r*.66,my=y+r*.42,mw=r*.36*sc*(1+c.laugh*.15),mh=r*.3*(1+c.laugh*.25);
   ctx.fillStyle='#e8343f';ctx.beginPath();ctx.ellipse(mx,my,mw+r*.1*sc,mh+r*.08,0,0,7);ctx.fill();
   ctx.fillStyle='#1a0505';ctx.beginPath();ctx.ellipse(mx,my,mw,mh,0,0,7);ctx.fill();
-  // nose
   ctx.fillStyle='#ff2d3c';ctx.beginPath();ctx.arc(x+f*r*.82,y+r*.05,r*.17,0,7);ctx.fill();
   ctx.fillStyle='#ffffff99';ctx.beginPath();ctx.arc(x+f*r*.82-r*.05,y,r*.05,0,7);ctx.fill();
+}
+function drawTroughAndLanes(){
+  // lanes
+  const {laneL,laneW,laneTop,laneBot}=G;
+  ctx.fillStyle='#120a20';rr(laneL-4,laneTop-4,laneW*NL+8,laneBot-laneTop+8,10);ctx.fill();
+  for(let k=0;k<NL;k++){
+    const x=laneL+k*laneW,v=LANES[k];
+    ctx.fillStyle=laneCol(v)+'40';ctx.fillRect(x+2,laneTop,laneW-4,laneBot-laneTop);
+    ctx.fillStyle=laneCol(v);rr(x+2,laneBot-G.r*.62,laneW-4,G.r*.62,5);ctx.fill();
+    ctx.fillStyle=v>=10?'#3a1d00':'#fff';ctx.font=`900 ${Math.max(12,Math.min(laneW*.5,G.r*.36))}px ui-rounded,system-ui`;
+    ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText(v,x+laneW/2,laneBot-G.r*.31);ctx.textBaseline='alphabetic';
+  }
+  // balls sitting in lanes
+  const seen={};
+  landed.forEach(l=>{const n=seen[l.k]=(seen[l.k]||0)+1;
+    drawBall(laneL+laneW*(l.k+.5),laneBot-G.r*.62-G.r*.18-(n-1)*G.r*.3,G.r*.16);});
+  // trough
+  ctx.fillStyle='#46306e';rr(laneL-4,G.troughY,laneW*NL+8,G.th,G.th/2);ctx.fill();
+  ctx.fillStyle='#2a1a47';rr(laneL,G.troughY+3,laneW*NL,G.th-6,(G.th-6)/2);ctx.fill();
+  // sliding chute
+  const sx=spoutX(),tw=laneW*.95,bw=laneW*.5,y0=G.spoutY,y1=y0+G.spoutH;
+  ctx.fillStyle='#ffc93c';ctx.beginPath();ctx.moveTo(sx-tw/2,y0-2);ctx.lineTo(sx+tw/2,y0-2);ctx.lineTo(sx+bw/2,y1);ctx.lineTo(sx-bw/2,y1);ctx.closePath();ctx.fill();
+  ctx.fillStyle='#ff9a1f';ctx.beginPath();ctx.moveTo(sx-tw/2+5,y0+2);ctx.lineTo(sx-tw/2+9,y0+2);ctx.lineTo(sx-bw/2+3,y1-2);ctx.lineTo(sx-bw/2,y1-2);ctx.closePath();ctx.fill();
+  // little speed streaks when it is moving fast
+  const v=Math.abs(Math.cos(sweepPhase))*(1/Math.max(.25,Math.pow(Math.abs(Math.sin(sweepPhase)),.3)));
+  if(v>1){ctx.strokeStyle='#ffc93c66';ctx.lineWidth=2;const dir=Math.sign(Math.cos(sweepPhase));
+    for(let i=0;i<3;i++){const yy=y0+G.spoutH*(.25+i*.25);ctx.beginPath();ctx.moveTo(sx-dir*(tw/2+4),yy);ctx.lineTo(sx-dir*(tw/2+4+laneW*.5*Math.min(2,v-.6)),yy);ctx.stroke();}}
 }
 function drawBall(x,y,r){
   const g=ctx.createRadialGradient(x-r*.35,y-r*.35,r*.1,x,y,r);g.addColorStop(0,'#fff');g.addColorStop(1,'#d9d9e8');
@@ -407,95 +423,60 @@ function drawBall(x,y,r){
 }
 function frame(now){
   const dt=Math.min(.05,(now-t0)/1000);t0=now;T+=dt;
-  // swivel: speeds drift so you can't just memorise a rhythm
+  sweepPhase+=dt*2*Math.PI/SWEEP_PERIOD;
   clowns.forEach(c=>{
-    c.speed+= (Math.sin(T*.37+c.i*2)*.4)*dt;
-    c.speed=Math.max(1.5,Math.min(3,c.speed));
-    c.phase+=c.speed*dt;
-    c.ang=1.25*Math.sin(c.phase);
-    c.laugh=Math.max(0,c.laugh-dt*1.5);
+    c.speed+=(Math.sin(T*.37+c.i*2)*.4)*dt;c.speed=Math.max(1.3,Math.min(2.6,c.speed));
+    c.phase+=c.speed*dt;c.ang=1.1*Math.sin(c.phase);
+    c.laugh=Math.max(0,c.laugh-dt*1.2);
   });
+  step(dt);
   drawBooth();
-  clowns.forEach(drawCabinet);
+  drawTroughAndLanes();
+  clowns.forEach(drawBody);
   clowns.forEach(drawHead);
-  // ball waiting
-  if(playing&&balls>0&&!busy)drawBall(G.ballX,G.ballY+Math.sin(T*4)*2,G.r*.26);
-  // flying balls
-  for(let i=flying.length-1;i>=0;i--){
-    const f=flying[i];f.t+=dt;const p=Math.min(1,f.t/f.dur);
-    const tx=f.c.x+Math.sin(f.c.ang)*f.c.r*.66,ty=f.c.y+f.c.r*.42;
-    const x=f.sx+(tx-f.sx)*p,y=f.sy+(ty-f.sy)*p-Math.sin(p*Math.PI)*H*.18;
-    drawBall(x,y,G.r*.26*(1-p*.4));
-    if(p>=1){flying.splice(i,1);resolveArrival(f);}
-  }
-  // dropping balls
-  for(let i=dropping.length-1;i>=0;i--){
-    const d=dropping[i];d.t+=dt;
-    if(d.t<d.hidden)continue;
-    const p=Math.min(1,(d.t-d.hidden)/d.dur),segs=d.pts.length-1,s=Math.min(segs-1,Math.floor(p*segs)),lp=p*segs-s;
-    if(s!==d.last){d.last=s;sfx.clack();}
-    const A=d.pts[s],B=d.pts[s+1];
-    drawBall(A.x+(B.x-A.x)*lp,A.y+(B.y-A.y)*lp,G.r*.16);
-    if(p>=1){
-      dropping.splice(i,1);const v=CHUTES[d.k].v;score+=v;
-      d.c.landed.push({k:d.k,dx:(Math.random()-.5)*chuteRect(d.c,d.k).w*.4});
-      sfx.land(v);toast('+'+v,v===5?'#ffc93c':v===3?'#6cc4ff':'#fff');
-      afterBall();
-    }
-  }
-  // missed balls
-  for(let i=bouncing.length-1;i>=0;i--){
-    const b=bouncing[i];b.t+=dt;b.vy+=900*dt;b.x+=b.vx*dt;b.y+=b.vy*dt;
-    ctx.globalAlpha=Math.max(0,1-b.t/1.2);drawBall(b.x,b.y,G.r*.22);ctx.globalAlpha=1;
-    if(b.t>1.2)bouncing.splice(i,1);
+  if(playing&&balls>0&&!busy)drawBall(G.ballX,G.ballY+Math.sin(T*4)*2,G.r*.24);
+  if(active&&active.stage!=='inside'&&active.x!=null){
+    const b=active;drawBall(b.x,b.y,b.stage==='up'?b.rad:G.r*.17);
   }
   requestAnimationFrame(frame);
 }
 
 // ---------- Odds Lab ----------
-let labC='you';
-function yourAim(){return S.throws>=6?S.catches/S.throws:.5;}
-function aimFor(k){return k==='you'?yourAim():+k;}
-function perBall(c){return [[0,1-c],...[[1,.6],[3,.3],[5,.1]].map(([v,w])=>[v,c*w])];}
-function exactDist(c){
+function exactDist(){
   let d={0:1};
-  for(let b=0;b<3;b++){const n={};for(const s in d)for(const[v,p]of perBall(c)){n[+s+v]=(n[+s+v]||0)+d[s]*p;}d=n;}
+  for(let b=0;b<3;b++){const n={};for(const s in d)for(let k=0;k<NL;k++){const t=+s+LANES[k];n[t]=(n[t]||0)+d[s]*LANE_P[k];}d=n;}
   const out=PRIZES.map(p=>({p,prob:0}));
-  for(const s in d){const idx=PRIZES.indexOf(prizeFor(+s));out[idx].prob+=d[s];}
+  for(const s in d)out[PRIZES.indexOf(prizeFor(+s))].prob+=d[s];
   return out;
 }
-function oneIn(p){if(p<=0)return 'never';const n=1/p;return '1 in '+Math.round(n).toLocaleString('en-NZ');}
-function renderExact(){
-  const c=aimFor(labC),dist=exactDist(c),teddy=dist[0].prob;
-  const ev=dist.reduce((a,x)=>a+x.prob*x.p.value,0);
-  const label=labC==='you'?(S.throws>=6?`your aim so far (${Math.round(c*100)}%)`:'average aim (50%), throw a few more balls to use yours'):labC==='1'?'perfect aim (every ball in a mouth)':'a kid\'s aim (40%)';
-  $('exact').innerHTML=`With <b>${label}</b>:<br><br>`+
-    `🧸 Giant teddy: <b>${oneIn(teddy)}</b> games<br>`+
+function oneIn(p){if(p<=0)return 'never';return '1 in '+Math.round(1/p).toLocaleString('en-NZ');}
+function renderLab(){
+  const mx=Math.max(...LANE_P);
+  $('laneChart').innerHTML=LANES.map((v,k)=>`<div class="col"><span class="pc">${Math.round(LANE_P[k]*100)}%</span><span class="b" style="height:${LANE_P[k]/mx*90}%;background:${laneCol(v)}"></span><span class="v">${v}</span></div>`).join('');
+  const dist=exactDist(),teddy=dist[0].prob,ev=dist.reduce((a,x)=>a+x.prob*x.p.value,0);
+  $('exact').innerHTML=`🧸 Giant teddy: <b>${oneIn(teddy)}</b> games<br>`+
     `That's about <b>${fmt(Math.round(PRICE/teddy))}</b> to win one teddy worth ${fmt(15)}<br><br>`+
     `🐶 Medium plush: ${oneIn(dist[1].prob)}<br>🔑 Tiny keyring: ${oneIn(dist[2].prob)}<br>😶 Nothing: <b>${Math.round(dist[3].prob*100)}%</b> of games<br><br>`+
     `Each $5 game wins you about <b>${fmt(ev)}</b> of prizes on average. The carnival keeps <b>${fmt(PRICE-ev)}</b>.`;
 }
-function simGame(c){let s=0;for(let b=0;b<3;b++){if(Math.random()<c){const r=Math.random();s+=r<.6?1:r<.9?3:5;}}return prizeFor(s);}
+const CUM=(()=>{let a=0;return LANE_P.map(p=>a+=p);})();
+function simBall(){const r=Math.random();for(let k=0;k<NL;k++)if(r<CUM[k])return LANES[k];return LANES[NL-1];}
+function simGame(){return prizeFor(simBall()+simBall()+simBall());}
 function runSim(n){
-  const c=aimFor(labC),counts=PRIZES.map(()=>0);let val=0;
-  for(let i=0;i<n;i++){const p=simGame(c);counts[PRIZES.indexOf(p)]++;val+=p.value;}
+  const counts=PRIZES.map(()=>0);let val=0;
+  for(let i=0;i<n;i++){const p=simGame();counts[PRIZES.indexOf(p)]++;val+=p.value;}
   const max=Math.max(...counts);
   $('simOut').innerHTML=`<div class="stat">${n.toLocaleString('en-NZ')} games cost <b>${fmt(n*PRICE)}</b><br>Prizes worth about <b>${fmt(val)}</b></div><div class="bars">`+
     PRIZES.map((p,i)=>`<div class="barrow"><span class="lab">${p.icon} ${p.name.split(' ').pop()}</span><span class="track"><span class="fill" style="width:${max?counts[i]/max*100:0}%;background:${i===0?'#ffc93c':i===3?'#6b5a8f':'#3aa7ff'}"></span></span><span class="num">${counts[i].toLocaleString('en-NZ')}</span></div>`).join('')+'</div>';
 }
 function simTeddy(){
-  const c=aimFor(labC),counts=PRIZES.map(()=>0);let g=0,val=0;
-  while(g<5e6){g++;const p=simGame(c);counts[PRIZES.indexOf(p)]++;val+=p.value;if(p===PRIZES[0])break;}
+  const counts=PRIZES.map(()=>0);let g=0;
+  while(g<5e6){g++;const p=simGame();counts[PRIZES.indexOf(p)]++;if(p===PRIZES[0])break;}
   const hours=g*1.5/60;
-  $('simOut').innerHTML=`<div class="stat" style="text-align:center"><div class="big" style="font-size:44px">🧸</div>Got the teddy after <b>${g.toLocaleString('en-NZ')}</b> games!<br>Cost: <b>${fmt(g*PRICE)}</b><br>That's about <b>${hours<1?Math.round(hours*60)+' minutes':Math.round(hours).toLocaleString('en-NZ')+' hours'}</b> of throwing.<br>Along the way you'd collect <b>${counts[2].toLocaleString('en-NZ')}</b> keyrings 🔑 and <b>${counts[1].toLocaleString('en-NZ')}</b> plushies 🐶<br>and get nothing <b>${counts[3].toLocaleString('en-NZ')}</b> times.</div>`+
+  $('simOut').innerHTML=`<div class="stat" style="text-align:center"><div class="big" style="font-size:44px">🧸</div>Got the teddy after <b>${g.toLocaleString('en-NZ')}</b> games!<br>Cost: <b>${fmt(g*PRICE)}</b><br>That's about <b>${hours<1?Math.round(hours*60)+' minutes':Math.round(hours).toLocaleString('en-NZ')+' hours'}</b> of playing.<br>Along the way you'd collect <b>${counts[2].toLocaleString('en-NZ')}</b> keyrings 🔑 and <b>${counts[1].toLocaleString('en-NZ')}</b> plushies 🐶<br>and get nothing <b>${counts[3].toLocaleString('en-NZ')}</b> times.</div>`+
     `<p class="note" style="text-align:center">Tap again: it's random, so sometimes it's quicker and sometimes way longer.</p>`;
 }
-function openLab(){
-  $('simOut').innerHTML='';
-  document.querySelectorAll('#skillSeg button').forEach(b=>b.classList.toggle('on',b.dataset.c===labC));
-  renderExact();show('lab');
-}
-document.querySelectorAll('#skillSeg button').forEach(b=>b.onclick=()=>{labC=b.dataset.c;document.querySelectorAll('#skillSeg button').forEach(x=>x.classList.toggle('on',x===b));renderExact();$('simOut').innerHTML='';});
+function openLab(){$('simOut').innerHTML='';renderLab();show('lab');}
 $('sim100').onclick=()=>runSim(100);
 $('sim1000').onclick=()=>runSim(1000);
 $('simTeddy').onclick=simTeddy;
