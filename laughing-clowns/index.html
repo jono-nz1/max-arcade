@@ -1,0 +1,511 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Laughing Clowns</title>
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Clowns">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icon-180.png">
+<link rel="icon" type="image/png" href="icon-192.png">
+<meta name="theme-color" content="#1a0f2e">
+<style>
+:root{
+  --bg:#1a0f2e; --panel:#2a1a47; --line:#46306e; --ink:#fff7ec; --dim:#bfa9dd;
+  --red:#e8343f; --red2:#b51f2b; --gold:#ffc93c; --gold2:#ff9a1f; --ok:#3fcf73; --blue:#3aa7ff;
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;height:100%;background:var(--bg);color:var(--ink);overflow:hidden;
+  font-family:ui-rounded,"SF Pro Rounded","Arial Rounded MT Bold","Nunito",system-ui,-apple-system,"Segoe UI",sans-serif;
+  -webkit-user-select:none;user-select:none;-webkit-touch-callout:none;overscroll-behavior:none}
+button{font:inherit;color:inherit;border:0;cursor:pointer;touch-action:manipulation}
+#app{position:fixed;inset:0;display:flex;flex-direction:column;
+  padding:env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left)}
+#hud{display:flex;gap:8px;padding:10px 12px 6px;align-items:stretch}
+.chip{flex:1;background:var(--panel);border:2px solid var(--line);border-radius:14px;padding:6px 8px;text-align:center;min-width:0}
+.chip .k{font-size:11px;color:var(--dim);text-transform:uppercase;letter-spacing:.08em}
+.chip .v{font-size:20px;font-weight:800;white-space:nowrap}
+#wallet .v{color:var(--gold)}
+#stage{flex:1;position:relative;min-height:0}
+canvas{position:absolute;inset:0;width:100%;height:100%;display:block;touch-action:none}
+#bar{display:flex;gap:10px;padding:8px 12px 12px}
+.btn{flex:1;padding:14px 10px;border-radius:16px;font-weight:800;font-size:17px;
+  background:linear-gradient(#ff5560,var(--red2));box-shadow:0 4px 0 #7a1119;}
+.btn:active{transform:translateY(3px);box-shadow:0 1px 0 #7a1119}
+.btn.alt{background:linear-gradient(#5b3f8f,#3b2766);box-shadow:0 4px 0 #22163d}
+.btn.gold{background:linear-gradient(var(--gold),var(--gold2));color:#3a1d00;box-shadow:0 4px 0 #9a5a00}
+.btn[disabled]{opacity:.45}
+#toast{position:absolute;left:50%;top:44%;transform:translate(-50%,-50%) scale(.8);opacity:0;
+  font-size:30px;font-weight:900;text-shadow:0 3px 0 #000a;pointer-events:none;transition:.25s;white-space:nowrap}
+#toast.show{opacity:1;transform:translate(-50%,-50%) scale(1)}
+.overlay{position:fixed;inset:0;background:#0b0616e6;display:none;align-items:center;justify-content:center;padding:16px;z-index:10}
+.overlay.show{display:flex}
+.card{background:var(--panel);border:2px solid var(--line);border-radius:22px;padding:18px;width:100%;max-width:440px;
+  max-height:100%;overflow:auto;-webkit-overflow-scrolling:touch}
+.card h2{margin:0 0 6px;font-size:24px;text-align:center}
+.card p{margin:8px 0;line-height:1.4;color:#efe3ff}
+.big{font-size:64px;text-align:center;line-height:1.1;margin:6px 0}
+.row{display:flex;gap:10px;margin-top:14px}
+table{width:100%;border-collapse:collapse;margin:8px 0;font-size:15px}
+td{padding:6px 4px;border-bottom:1px solid var(--line)}
+td:last-child{text-align:right;font-weight:800}
+.note{font-size:13px;color:var(--dim)}
+.stat{background:#1f1338;border-radius:14px;padding:10px 12px;margin:8px 0}
+.stat b{color:var(--gold)}
+.bars{margin:8px 0}
+.barrow{display:flex;align-items:center;gap:8px;margin:6px 0;font-size:14px}
+.barrow .lab{width:92px;flex:none}
+.barrow .track{flex:1;height:16px;background:#1f1338;border-radius:8px;overflow:hidden}
+.barrow .fill{height:100%;border-radius:8px;background:var(--blue);transition:width .5s}
+.barrow .num{width:64px;text-align:right;flex:none;font-weight:800}
+.seg{display:flex;background:#1f1338;border-radius:12px;padding:4px;gap:4px;margin:8px 0}
+.seg button{flex:1;padding:8px 4px;border-radius:9px;font-weight:800;font-size:14px;color:var(--dim);background:none}
+.seg button.on{background:var(--line);color:var(--ink)}
+</style>
+</head>
+<body>
+<div id="app">
+  <div id="hud">
+    <div class="chip" id="wallet"><div class="k">Pocket money</div><div class="v" id="money">$20</div></div>
+    <div class="chip"><div class="k">Balls</div><div class="v" id="balls">-</div></div>
+    <div class="chip"><div class="k">Score</div><div class="v" id="score">0</div></div>
+  </div>
+  <div id="stage"><canvas id="cv"></canvas><div id="toast"></div></div>
+  <div id="bar">
+    <button class="btn" id="playBtn">Pay $5 &amp; Play</button>
+    <button class="btn alt" id="labBtn">Odds Lab</button>
+  </div>
+</div>
+
+<!-- Intro -->
+<div class="overlay show" id="intro"><div class="card">
+  <h2>🎪 Laughing Clowns 🎪</h2>
+  <div class="big">🤡🤡🤡</div>
+  <p>Pay $5 for <b>3 balls</b>. Tap a clown to throw. Get the ball in its mouth while it's looking at you!</p>
+  <p>Inside, the ball drops into a chute worth <b>1</b>, <b>3</b> or <b>5</b> points.</p>
+  <table>
+    <tr><td>🧸 GIANT TEDDY</td><td>15 points</td></tr>
+    <tr><td>🐶 Medium plush</td><td>11 to 13</td></tr>
+    <tr><td>🔑 Tiny keyring</td><td>7 to 10</td></tr>
+    <tr><td>😶 Nothing</td><td>under 7</td></tr>
+  </table>
+  <p class="note">You've got $20 of pocket money. How hard can it be?</p>
+  <div class="row"><button class="btn gold" id="startBtn">Step right up!</button></div>
+</div></div>
+
+<!-- Result -->
+<div class="overlay" id="result"><div class="card">
+  <h2 id="resTitle">Result</h2>
+  <div class="big" id="resIcon">😶</div>
+  <p id="resText" style="text-align:center"></p>
+  <div class="stat" id="resStats"></div>
+  <div class="row">
+    <button class="btn" id="againBtn">Again ($5)</button>
+    <button class="btn alt" id="resLabBtn">Odds Lab</button>
+  </div>
+</div></div>
+
+<!-- Broke -->
+<div class="overlay" id="broke"><div class="card">
+  <h2>Out of pocket money! 💸</h2>
+  <div class="big">👛</div>
+  <div class="stat" id="brokeStats"></div>
+  <p id="brokeText"></p>
+  <div class="row">
+    <button class="btn alt" id="brokeLab">See the real odds</button>
+    <button class="btn gold" id="topUp">Ask Dad for $20</button>
+  </div>
+</div></div>
+
+<!-- Odds Lab -->
+<div class="overlay" id="lab"><div class="card">
+  <h2>🔬 Odds Lab</h2>
+  <p class="note" style="text-align:center">What's really going on inside the clowns</p>
+  <div class="stat">
+    Inside each clown, the chutes are <b>not</b> equal:<br>
+    1 point: <b>60%</b> of balls &nbsp; 3 points: <b>30%</b> &nbsp; 5 points: only <b>10%</b>
+  </div>
+  <p class="note">Throwing skill only gets the ball in the mouth. Which chute it falls into is pure luck.</p>
+  <div class="seg" id="skillSeg">
+    <button data-c="1">Perfect aim</button>
+    <button data-c="you" class="on">Your aim</button>
+    <button data-c="0.4">Kid aim</button>
+  </div>
+  <div class="stat" id="exact"></div>
+  <h2 style="font-size:19px;margin-top:14px">Simulate games</h2>
+  <div class="row" style="margin-top:6px">
+    <button class="btn alt" id="sim100">100 games</button>
+    <button class="btn alt" id="sim1000">1,000 games</button>
+  </div>
+  <div class="row" style="margin-top:10px">
+    <button class="btn gold" id="simTeddy">Play until I win the teddy</button>
+  </div>
+  <div id="simOut"></div>
+  <div class="row"><button class="btn" id="labClose">Back to the booth</button></div>
+</div></div>
+
+<script>
+(()=>{
+'use strict';
+const $=id=>document.getElementById(id);
+const PRICE=5, TOPUP=20;
+const CHUTES=[{v:1,w:.6},{v:5,w:.1},{v:3,w:.3}]; // drawn left to right; 5 is the narrow middle one
+const PRIZES=[
+  {min:15,max:15,name:'GIANT TEDDY',icon:'🧸',value:15},
+  {min:11,max:13,name:'Medium plush',icon:'🐶',value:4},
+  {min:7,max:10,name:'Tiny keyring',icon:'🔑',value:0.5},
+  {min:0,max:6,name:'Nothing',icon:'😶',value:0},
+];
+const prizeFor=s=>PRIZES.find(p=>s>=p.min&&s<=p.max);
+const fmt=n=>'$'+(Math.round(n*100)/100).toLocaleString('en-NZ',{minimumFractionDigits:n%1?2:0,maximumFractionDigits:2});
+
+// ---------- persistent stats ----------
+let S={money:20,spent:0,games:0,throws:0,catches:0,prizes:{},prizeValue:0,topups:0};
+try{const s=JSON.parse(localStorage.getItem('clowns.v1'));if(s)S=Object.assign(S,s);}catch(e){}
+const save=()=>{try{localStorage.setItem('clowns.v1',JSON.stringify(S));}catch(e){}};
+
+// ---------- audio ----------
+let ac=null;
+function tone(f,d=.08,type='square',vol=.06,slide=0){
+  try{
+    ac=ac||new (window.AudioContext||window.webkitAudioContext)();
+    const o=ac.createOscillator(),g=ac.createGain(),t=ac.currentTime;
+    o.type=type;o.frequency.setValueAtTime(f,t);
+    if(slide)o.frequency.exponentialRampToValueAtTime(Math.max(40,f+slide),t+d);
+    g.gain.setValueAtTime(vol,t);g.gain.exponentialRampToValueAtTime(.0001,t+d);
+    o.connect(g).connect(ac.destination);o.start(t);o.stop(t+d+.02);
+  }catch(e){}
+}
+const sfx={
+  throw:()=>tone(500,.15,'triangle',.08,-300),
+  clack:()=>tone(1400+Math.random()*500,.03,'square',.03),
+  gulp:()=>{tone(300,.12,'sine',.12,300);setTimeout(()=>tone(700,.1,'sine',.1),90)},
+  miss:()=>tone(180,.25,'sawtooth',.06,-100),
+  land:v=>{[523,659,784,1047].slice(0,v===5?4:v===3?3:2).forEach((f,i)=>setTimeout(()=>tone(f,.12,'triangle',.08),i*80))},
+  fanfare:()=>[523,659,784,1047,784,1047].forEach((f,i)=>setTimeout(()=>tone(f,.18,'triangle',.1),i*130)),
+  sad:()=>[392,349,330,262].forEach((f,i)=>setTimeout(()=>tone(f,.25,'triangle',.08),i*220)),
+};
+
+// ---------- canvas ----------
+const cv=$('cv'),ctx=cv.getContext('2d');
+let W=0,H=0,DPR=1;
+function resize(){
+  const r=cv.getBoundingClientRect();DPR=Math.min(3,window.devicePixelRatio||1);
+  W=r.width;H=r.height;cv.width=W*DPR;cv.height=H*DPR;ctx.setTransform(DPR,0,0,DPR,0,0);layout();
+}
+const N=3;
+const clowns=[];
+const colours=[{hair:'#ff7a1a',hat:'#3aa7ff',dot:'#ffc93c'},{hair:'#3fcf73',hat:'#e8343f',dot:'#fff'},{hair:'#c159ff',hat:'#ffc93c',dot:'#e8343f'}];
+for(let i=0;i<N;i++)clowns.push({i,phase:Math.random()*6,speed:1.8+Math.random()*.9,ang:0,x:0,y:0,r:0,col:colours[i],laugh:0,landed:[]});
+let G={};
+function layout(){
+  const colW=W/N;
+  const r=Math.min(colW*.36,H*.12);
+  G={colW,r,headY:Math.max(H*.08+r*2.3,H*.36-r*.5),boxTop:0,boxBot:0,ballX:W/2,ballY:H-Math.max(28,r*.55)};
+  G.boxTop=G.headY+r*1.05;G.boxBot=Math.min(G.boxTop+r*2.1,H*.72);
+  clowns.forEach((c,i)=>{c.x=colW*(i+.5);c.y=G.headY;c.r=r;});
+}
+
+// ---------- game state ----------
+let balls=0,score=0,playing=false,busy=false;
+const flying=[];   // balls in flight
+const dropping=[]; // balls dropping inside a clown
+const bouncing=[]; // missed balls falling away
+let t0=performance.now(),T=0;
+
+function updateHud(){
+  $('money').textContent=fmt(S.money);
+  $('balls').textContent=playing?'●'.repeat(balls)+'○'.repeat(3-balls):'-';
+  $('score').textContent=score;
+  $('playBtn').disabled=playing;
+  $('playBtn').textContent=playing?'Tap a clown!':'Pay $5 & Play';
+}
+function toast(txt,col='#fff'){
+  const el=$('toast');el.textContent=txt;el.style.color=col;el.classList.add('show');
+  clearTimeout(toast.t);toast.t=setTimeout(()=>el.classList.remove('show'),900);
+}
+function startGame(){
+  if(playing)return;
+  if(S.money<PRICE){showBroke();return;}
+  S.money-=PRICE;S.spent+=PRICE;save();
+  playing=true;balls=3;score=0;clowns.forEach(c=>c.landed=[]);
+  tone(880,.08,'square',.05);setTimeout(()=>tone(1320,.1,'square',.05),80);
+  updateHud();
+}
+function pickChute(){
+  let r=Math.random();
+  for(let k=0;k<CHUTES.length;k++){if((r-=CHUTES[k].w)<0)return k;}
+  return 0;
+}
+function throwAt(c){
+  if(!playing||balls<=0||busy)return;
+  balls--;busy=true;updateHud();sfx.throw();
+  flying.push({c,t:0,dur:.5,sx:G.ballX,sy:G.ballY});
+}
+function chuteRect(c,k){
+  const w=G.colW*.8,x0=c.x-w/2;
+  const widths=[.4,.2,.4];let x=x0;for(let j=0;j<k;j++)x+=w*widths[j];
+  return {x,w:w*widths[k],y:G.boxBot-G.r*.55,h:G.r*.55};
+}
+function resolveArrival(f){
+  const c=f.c,a=Math.abs(c.ang);
+  S.throws++;
+  if(a<.34){
+    S.catches++;c.laugh=1;sfx.gulp();
+    const k=pickChute(),cr=chuteRect(c,k);
+    const top=G.boxTop+G.r*.25;
+    // zigzag path through pegs
+    const pts=[{x:c.x,y:top}];const steps=4;
+    for(let s=1;s<steps;s++){
+      pts.push({x:c.x+(Math.random()-.5)*G.colW*.55,y:top+(cr.y-top)*(s/steps)});
+    }
+    pts.push({x:cr.x+cr.w/2,y:cr.y+cr.h*.55});
+    dropping.push({c,k,pts,t:0,dur:1.1,hidden:.25,last:-1});
+  }else{
+    const close=a<.55;
+    sfx.miss();toast(close?'So close!':'Bonk!',close?'#ffc93c':'#ff8b8b');
+    bouncing.push({x:c.x+(Math.random()-.5)*c.r,y:c.y+c.r*.4,vx:(Math.random()-.5)*160,vy:-120,t:0});
+    setTimeout(afterBall,650);
+  }
+  save();
+}
+function afterBall(){
+  busy=false;updateHud();
+  if(balls===0)setTimeout(endGame,500);
+}
+function endGame(){
+  playing=false;S.games++;
+  const p=prizeFor(score);
+  S.prizes[p.name]=(S.prizes[p.name]||0)+1;S.prizeValue+=p.value;save();
+  updateHud();
+  $('resIcon').textContent=p.icon;
+  if(p.value>=15){$('resTitle').textContent='JACKPOT!!!';sfx.fanfare();}
+  else if(p.value>0){$('resTitle').textContent='You won something!';sfx.land(3);}
+  else{$('resTitle').textContent='Better luck next time';sfx.sad();}
+  $('resText').innerHTML=p.value>0?`${score} points: <b>${p.name}</b><br><span class="note">Worth about ${fmt(p.value)} in a shop</span>`:`${score} points. No prize.`;
+  $('resStats').innerHTML=statsHtml();
+  $('againBtn').textContent=S.money>=PRICE?'Again ($5)':'Out of money';
+  show('result');
+}
+function statsHtml(){
+  const rate=S.throws?Math.round(S.catches/S.throws*100):0;
+  const pz=Object.entries(S.prizes).filter(([k])=>k!=='Nothing').map(([k,v])=>`${v} × ${k}`).join(', ')||'none yet';
+  return `Games played: <b>${S.games}</b><br>Money spent: <b>${fmt(S.spent)}</b><br>Prizes: <b>${pz}</b><br>Prizes worth about: <b>${fmt(S.prizeValue)}</b><br>Your aim: <b>${rate}%</b> of balls in a mouth`;
+}
+function showBroke(){
+  const lost=S.spent-S.prizeValue;
+  $('brokeStats').innerHTML=statsHtml();
+  $('brokeText').innerHTML=`You spent <b>${fmt(S.spent)}</b> and won stuff worth about <b>${fmt(S.prizeValue)}</b>. The carnival kept <b>${fmt(Math.max(0,lost))}</b>. That's how they pay for the rides! 🎡`;
+  show('broke');
+}
+function show(id){document.querySelectorAll('.overlay').forEach(o=>o.classList.toggle('show',o.id===id));}
+function hideAll(){document.querySelectorAll('.overlay').forEach(o=>o.classList.remove('show'));}
+
+// ---------- input ----------
+cv.addEventListener('pointerdown',e=>{
+  const r=cv.getBoundingClientRect(),x=e.clientX-r.left,y=e.clientY-r.top;
+  if(!playing){toast('Pay $5 first!','#ffc93c');return;}
+  if(y>G.boxBot+10)return;
+  throwAt(clowns[Math.max(0,Math.min(N-1,Math.floor(x/G.colW)))]);
+});
+$('startBtn').onclick=()=>{hideAll();tone(660,.1,'triangle',.06);};
+$('playBtn').onclick=startGame;
+$('againBtn').onclick=()=>{hideAll();if(S.money>=PRICE)startGame();else showBroke();};
+$('topUp').onclick=()=>{S.money+=TOPUP;S.topups++;save();updateHud();hideAll();};
+$('labBtn').onclick=openLab;$('resLabBtn').onclick=openLab;$('brokeLab').onclick=openLab;
+$('labClose').onclick=()=>{hideAll();updateHud();};
+
+// ---------- drawing ----------
+function rr(x,y,w,h,r){ctx.beginPath();ctx.moveTo(x+r,y);ctx.arcTo(x+w,y,x+w,y+h,r);ctx.arcTo(x+w,y+h,x,y+h,r);ctx.arcTo(x,y+h,x,y,r);ctx.arcTo(x,y,x+w,y,r);ctx.closePath();}
+function drawBooth(){
+  // background lights
+  const g=ctx.createLinearGradient(0,0,0,H);g.addColorStop(0,'#2b1650');g.addColorStop(1,'#140a24');
+  ctx.fillStyle=g;ctx.fillRect(0,0,W,H);
+  // awning stripes
+  const aw=H*.06,sw=W/10;
+  for(let i=0;i<10;i++){ctx.fillStyle=i%2?'#fff3e0':'#e8343f';ctx.fillRect(i*sw,0,sw+1,aw);
+    ctx.beginPath();ctx.arc(i*sw+sw/2,aw,sw/2,0,Math.PI);ctx.fill();}
+  // bulbs
+  for(let i=0;i<14;i++){const on=((T*4|0)+i)%3===0;ctx.fillStyle=on?'#ffe27a':'#7a5a20';
+    ctx.beginPath();ctx.arc((i+.5)*W/14,aw+sw/2+8,3.5,0,7);ctx.fill();}
+  // counter
+  ctx.fillStyle='#5a2a14';ctx.fillRect(0,G.boxBot+8,W,H-G.boxBot);
+  ctx.fillStyle='#7a3a1c';ctx.fillRect(0,G.boxBot+8,W,10);
+  // prize shelf text
+  ctx.fillStyle='#ffc93c';ctx.font=`800 ${Math.max(12,G.r*.28)}px ui-rounded,system-ui`;ctx.textAlign='center';
+  ctx.fillText('15 = 🧸   11+ = 🐶   7+ = 🔑',W/2,G.boxBot+H*.07);
+}
+function drawCabinet(c){
+  const w=G.colW*.8,x=c.x-w/2,y=G.boxTop,h=G.boxBot-G.boxTop;
+  // body (clown suit)
+  ctx.fillStyle='#3b2766';rr(x,y,w,h,12);ctx.fill();
+  ctx.save();rr(x,y,w,h,12);ctx.clip();
+  ctx.fillStyle=c.col.hat+'33';
+  for(let i=0;i<8;i++)for(let j=0;j<6;j++){ctx.beginPath();ctx.arc(x+i*w/6,y+j*h/4+(i%2)*h/8,4,0,7);ctx.fill();}
+  ctx.restore();
+  // window with pegs
+  const wx=x+w*.08,wy=y+G.r*.15,ww=w*.84,wh=h-G.r*.15-G.r*.6;
+  ctx.fillStyle='#120a20';rr(wx,wy,ww,wh+G.r*.55,8);ctx.fill();
+  ctx.fillStyle='#8f7bb8';
+  for(let row=0;row<3;row++)for(let k=0;k<4;k++){
+    const px=wx+ww*((k+.5+(row%2?.5:0))/4.5)+ww*.03,py=wy+wh*(.25+row*.25);
+    ctx.beginPath();ctx.arc(px,py,2.5,0,7);ctx.fill();
+  }
+  // chutes
+  for(let k=0;k<3;k++){
+    const cr=chuteRect(c,k);
+    ctx.fillStyle=CHUTES[k].v===5?'#ffc93c':CHUTES[k].v===3?'#3aa7ff':'#6b5a8f';
+    rr(cr.x+1.5,cr.y,cr.w-3,cr.h,5);ctx.fill();
+    ctx.fillStyle=CHUTES[k].v===5?'#3a1d00':'#fff';
+    ctx.font=`900 ${Math.max(12,G.r*.32)}px ui-rounded,system-ui`;ctx.textAlign='center';ctx.textBaseline='middle';
+    ctx.fillText(CHUTES[k].v,cr.x+cr.w/2,cr.y+cr.h*.5);
+  }
+  ctx.textBaseline='alphabetic';
+  // landed balls
+  c.landed.forEach(L=>{const cr=chuteRect(c,L.k);drawBall(cr.x+cr.w/2+L.dx,cr.y+cr.h*.2,G.r*.16);});
+  // ruffle collar
+  for(let i=0;i<6;i++){ctx.fillStyle=i%2?'#fff':c.col.dot;ctx.beginPath();ctx.arc(c.x-G.r*.9+i*G.r*.36,y+2,G.r*.22,Math.PI,0);ctx.fill();}
+}
+function drawHead(c){
+  const {x,y,r}=c,a=c.ang,f=Math.sin(a),sc=Math.max(.12,Math.cos(a));
+  // hair tufts (stay fixed-ish, shift opposite)
+  ctx.fillStyle=c.col.hair;
+  for(const s of[-1,1]){const hx=x+s*r*.92-f*r*.15;
+    for(let k=0;k<3;k++){ctx.beginPath();ctx.arc(hx+s*r*.12,y-r*.25+k*r*.28,r*.28,0,7);ctx.fill();}}
+  // face
+  const fg=ctx.createRadialGradient(x+f*r*.3,y-r*.3,r*.1,x,y,r);fg.addColorStop(0,'#ffffff');fg.addColorStop(1,'#f1dcc8');
+  ctx.fillStyle=fg;ctx.beginPath();ctx.arc(x,y,r,0,7);ctx.fill();
+  const fx=x+f*r*.62;
+  // hat
+  ctx.fillStyle=c.col.hat;ctx.beginPath();ctx.moveTo(x-r*.55+f*r*.2,y-r*.78);ctx.lineTo(x+r*.55+f*r*.2,y-r*.78);ctx.lineTo(x+f*r*.45,y-r*1.75);ctx.closePath();ctx.fill();
+  ctx.fillStyle=c.col.dot;ctx.beginPath();ctx.arc(x+f*r*.45,y-r*1.78,r*.15,0,7);ctx.fill();
+  // eyes
+  const laugh=c.laugh>0;
+  for(const s of[-1,1]){
+    const ex=fx+s*r*.34*sc,ey=y-r*.25;
+    ctx.fillStyle='#3aa7ff';ctx.beginPath();ctx.ellipse(ex,ey-r*.04,r*.17*sc,r*.24,0,0,7);ctx.fill();
+    ctx.fillStyle='#fff';ctx.beginPath();ctx.ellipse(ex,ey,r*.11*sc,r*.14,0,0,7);ctx.fill();
+    ctx.fillStyle='#111';
+    if(laugh){ctx.lineWidth=3;ctx.strokeStyle='#111';ctx.beginPath();ctx.arc(ex,ey+r*.05,r*.09*sc,Math.PI,0);ctx.stroke();}
+    else{ctx.beginPath();ctx.arc(ex+f*r*.04,ey+r*.02,r*.06*sc,0,7);ctx.fill();}
+  }
+  // mouth (the target)
+  const mx=x+f*r*.66,my=y+r*.42,mw=r*.36*sc*(1+c.laugh*.15),mh=r*.3*(1+c.laugh*.25);
+  ctx.fillStyle='#e8343f';ctx.beginPath();ctx.ellipse(mx,my,mw+r*.1*sc,mh+r*.08,0,0,7);ctx.fill();
+  ctx.fillStyle='#1a0505';ctx.beginPath();ctx.ellipse(mx,my,mw,mh,0,0,7);ctx.fill();
+  // nose
+  ctx.fillStyle='#ff2d3c';ctx.beginPath();ctx.arc(x+f*r*.82,y+r*.05,r*.17,0,7);ctx.fill();
+  ctx.fillStyle='#ffffff99';ctx.beginPath();ctx.arc(x+f*r*.82-r*.05,y,r*.05,0,7);ctx.fill();
+}
+function drawBall(x,y,r){
+  const g=ctx.createRadialGradient(x-r*.35,y-r*.35,r*.1,x,y,r);g.addColorStop(0,'#fff');g.addColorStop(1,'#d9d9e8');
+  ctx.fillStyle=g;ctx.beginPath();ctx.arc(x,y,r,0,7);ctx.fill();
+  ctx.strokeStyle='#e8343f';ctx.lineWidth=Math.max(1,r*.18);ctx.beginPath();ctx.arc(x,y,r*.7,-.6,.6);ctx.stroke();
+}
+function frame(now){
+  const dt=Math.min(.05,(now-t0)/1000);t0=now;T+=dt;
+  // swivel: speeds drift so you can't just memorise a rhythm
+  clowns.forEach(c=>{
+    c.speed+= (Math.sin(T*.37+c.i*2)*.4)*dt;
+    c.speed=Math.max(1.5,Math.min(3,c.speed));
+    c.phase+=c.speed*dt;
+    c.ang=1.25*Math.sin(c.phase);
+    c.laugh=Math.max(0,c.laugh-dt*1.5);
+  });
+  drawBooth();
+  clowns.forEach(drawCabinet);
+  clowns.forEach(drawHead);
+  // ball waiting
+  if(playing&&balls>0&&!busy)drawBall(G.ballX,G.ballY+Math.sin(T*4)*2,G.r*.26);
+  // flying balls
+  for(let i=flying.length-1;i>=0;i--){
+    const f=flying[i];f.t+=dt;const p=Math.min(1,f.t/f.dur);
+    const tx=f.c.x+Math.sin(f.c.ang)*f.c.r*.66,ty=f.c.y+f.c.r*.42;
+    const x=f.sx+(tx-f.sx)*p,y=f.sy+(ty-f.sy)*p-Math.sin(p*Math.PI)*H*.18;
+    drawBall(x,y,G.r*.26*(1-p*.4));
+    if(p>=1){flying.splice(i,1);resolveArrival(f);}
+  }
+  // dropping balls
+  for(let i=dropping.length-1;i>=0;i--){
+    const d=dropping[i];d.t+=dt;
+    if(d.t<d.hidden)continue;
+    const p=Math.min(1,(d.t-d.hidden)/d.dur),segs=d.pts.length-1,s=Math.min(segs-1,Math.floor(p*segs)),lp=p*segs-s;
+    if(s!==d.last){d.last=s;sfx.clack();}
+    const A=d.pts[s],B=d.pts[s+1];
+    drawBall(A.x+(B.x-A.x)*lp,A.y+(B.y-A.y)*lp,G.r*.16);
+    if(p>=1){
+      dropping.splice(i,1);const v=CHUTES[d.k].v;score+=v;
+      d.c.landed.push({k:d.k,dx:(Math.random()-.5)*chuteRect(d.c,d.k).w*.4});
+      sfx.land(v);toast('+'+v,v===5?'#ffc93c':v===3?'#6cc4ff':'#fff');
+      afterBall();
+    }
+  }
+  // missed balls
+  for(let i=bouncing.length-1;i>=0;i--){
+    const b=bouncing[i];b.t+=dt;b.vy+=900*dt;b.x+=b.vx*dt;b.y+=b.vy*dt;
+    ctx.globalAlpha=Math.max(0,1-b.t/1.2);drawBall(b.x,b.y,G.r*.22);ctx.globalAlpha=1;
+    if(b.t>1.2)bouncing.splice(i,1);
+  }
+  requestAnimationFrame(frame);
+}
+
+// ---------- Odds Lab ----------
+let labC='you';
+function yourAim(){return S.throws>=6?S.catches/S.throws:.5;}
+function aimFor(k){return k==='you'?yourAim():+k;}
+function perBall(c){return [[0,1-c],...[[1,.6],[3,.3],[5,.1]].map(([v,w])=>[v,c*w])];}
+function exactDist(c){
+  let d={0:1};
+  for(let b=0;b<3;b++){const n={};for(const s in d)for(const[v,p]of perBall(c)){n[+s+v]=(n[+s+v]||0)+d[s]*p;}d=n;}
+  const out=PRIZES.map(p=>({p,prob:0}));
+  for(const s in d){const idx=PRIZES.indexOf(prizeFor(+s));out[idx].prob+=d[s];}
+  return out;
+}
+function oneIn(p){if(p<=0)return 'never';const n=1/p;return '1 in '+Math.round(n).toLocaleString('en-NZ');}
+function renderExact(){
+  const c=aimFor(labC),dist=exactDist(c),teddy=dist[0].prob;
+  const ev=dist.reduce((a,x)=>a+x.prob*x.p.value,0);
+  const label=labC==='you'?(S.throws>=6?`your aim so far (${Math.round(c*100)}%)`:'average aim (50%), throw a few more balls to use yours'):labC==='1'?'perfect aim (every ball in a mouth)':'a kid\'s aim (40%)';
+  $('exact').innerHTML=`With <b>${label}</b>:<br><br>`+
+    `🧸 Giant teddy: <b>${oneIn(teddy)}</b> games<br>`+
+    `That's about <b>${fmt(Math.round(PRICE/teddy))}</b> to win one teddy worth ${fmt(15)}<br><br>`+
+    `🐶 Medium plush: ${oneIn(dist[1].prob)}<br>🔑 Tiny keyring: ${oneIn(dist[2].prob)}<br>😶 Nothing: <b>${Math.round(dist[3].prob*100)}%</b> of games<br><br>`+
+    `Each $5 game wins you about <b>${fmt(ev)}</b> of prizes on average. The carnival keeps <b>${fmt(PRICE-ev)}</b>.`;
+}
+function simGame(c){let s=0;for(let b=0;b<3;b++){if(Math.random()<c){const r=Math.random();s+=r<.6?1:r<.9?3:5;}}return prizeFor(s);}
+function runSim(n){
+  const c=aimFor(labC),counts=PRIZES.map(()=>0);let val=0;
+  for(let i=0;i<n;i++){const p=simGame(c);counts[PRIZES.indexOf(p)]++;val+=p.value;}
+  const max=Math.max(...counts);
+  $('simOut').innerHTML=`<div class="stat">${n.toLocaleString('en-NZ')} games cost <b>${fmt(n*PRICE)}</b><br>Prizes worth about <b>${fmt(val)}</b></div><div class="bars">`+
+    PRIZES.map((p,i)=>`<div class="barrow"><span class="lab">${p.icon} ${p.name.split(' ').pop()}</span><span class="track"><span class="fill" style="width:${max?counts[i]/max*100:0}%;background:${i===0?'#ffc93c':i===3?'#6b5a8f':'#3aa7ff'}"></span></span><span class="num">${counts[i].toLocaleString('en-NZ')}</span></div>`).join('')+'</div>';
+}
+function simTeddy(){
+  const c=aimFor(labC),counts=PRIZES.map(()=>0);let g=0,val=0;
+  while(g<5e6){g++;const p=simGame(c);counts[PRIZES.indexOf(p)]++;val+=p.value;if(p===PRIZES[0])break;}
+  const hours=g*1.5/60;
+  $('simOut').innerHTML=`<div class="stat" style="text-align:center"><div class="big" style="font-size:44px">🧸</div>Got the teddy after <b>${g.toLocaleString('en-NZ')}</b> games!<br>Cost: <b>${fmt(g*PRICE)}</b><br>That's about <b>${hours<1?Math.round(hours*60)+' minutes':Math.round(hours).toLocaleString('en-NZ')+' hours'}</b> of throwing.<br>Along the way you'd collect <b>${counts[2].toLocaleString('en-NZ')}</b> keyrings 🔑 and <b>${counts[1].toLocaleString('en-NZ')}</b> plushies 🐶<br>and get nothing <b>${counts[3].toLocaleString('en-NZ')}</b> times.</div>`+
+    `<p class="note" style="text-align:center">Tap again: it's random, so sometimes it's quicker and sometimes way longer.</p>`;
+}
+function openLab(){
+  $('simOut').innerHTML='';
+  document.querySelectorAll('#skillSeg button').forEach(b=>b.classList.toggle('on',b.dataset.c===labC));
+  renderExact();show('lab');
+}
+document.querySelectorAll('#skillSeg button').forEach(b=>b.onclick=()=>{labC=b.dataset.c;document.querySelectorAll('#skillSeg button').forEach(x=>x.classList.toggle('on',x===b));renderExact();$('simOut').innerHTML='';});
+$('sim100').onclick=()=>runSim(100);
+$('sim1000').onclick=()=>runSim(1000);
+$('simTeddy').onclick=simTeddy;
+
+// ---------- boot ----------
+window.addEventListener('resize',resize);
+resize();updateHud();requestAnimationFrame(frame);
+if(S.games>0)hideAll();
+if('serviceWorker' in navigator){navigator.serviceWorker.register('sw.js').catch(()=>{});}
+})();
+</script>
+</body>
+</html>
