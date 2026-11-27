@@ -388,7 +388,17 @@ function unlockedUpTo(p, t) { let L = 1; while (p.lv[t + '-' + L]) L++; return L
 
 // ---------- screens ----------
 const $ = id => document.getElementById(id);
-function show(id) { for (const s of document.querySelectorAll('.screen')) s.classList.toggle('on', s.id === id); if (id === 'game') resize(); }
+function show(id) { for (const s of document.querySelectorAll('.screen')) s.classList.toggle('on', s.id === id); if (id === 'game') resize(); if (id === 'levels') scrollToNext(); }
+// jump the level list so the player's next level sits in the middle of the screen
+function scrollToNext() {
+  requestAnimationFrame(() => {
+    const box = $('grid').closest('.scroll'), btn = $('grid').querySelector('.lv.next');
+    if (!box) return;
+    if (!btn) { box.scrollTop = 0; return; }
+    const r = btn.getBoundingClientRect(), br = box.getBoundingClientRect();
+    box.scrollTop = Math.max(0, box.scrollTop + (r.top - br.top) - (box.clientHeight - r.height) / 2);
+  });
+}
 let toastT = 0;
 function toast(msg, ms) { const t = $('toast'); t.textContent = msg; t.classList.add('on'); clearTimeout(toastT); toastT = setTimeout(() => t.classList.remove('on'), ms || 2600); }
 const stars = n => '★'.repeat(n);
@@ -819,19 +829,41 @@ function hasUsefulMove() {
   }
   return false;
 }
-function stuck() {
+// search back through the undo history for the latest point the level can still be finished from
+function findWayBack() {
+  const caps = capsOf(), t0 = performance.now();
+  for (let back = 1; back <= G.hist.length; back++) {
+    const snap = G.hist[G.hist.length - back];
+    const cols = G.bolts.map((b, i) => (snap[i] || []).map(n => n.c));
+    const sol = bestPath(cols, caps, G.N, 25000) || solve(cols, caps, G.N, 25000);
+    if (sol) return { back, sol };
+    if (performance.now() - t0 > 2500) break;
+  }
+  return null;
+}
+function stuck(why) {
   sfx.bad();
+  if (G.sel >= 0) dropNut();
   const bonus = G.bolts.find(b => b.bonus), canAdd = !bonus || bonus.cap < G.N;
-  const btns = [{ label: 'Undo last move', fn: () => { undo(); } }];
+  const way = G.hist.length ? findWayBack() : null;
+  const btns = [];
+  if (way) btns.push({ label: 'Undo ' + way.back + (way.back === 1 ? ' move' : ' moves') + ' to get back on track', fn: () => { undo(way.back); G.plan = way.sol; } });
+  else if (G.hist.length) btns.push({ label: 'Undo last move', cls: way ? 'ghost' : '', fn: () => { undo(1); } });
   if (canAdd) btns.push({ label: bonus ? 'Add a space to the extra bolt' : 'Add the extra bolt', cls: 'ghost', fn: () => { addBolt(); } });
   btns.push({ label: 'Start the level again', cls: 'ghost', fn: () => { $('gRestart').onclick(); } });
-  modal('No moves left', '<p>Every bolt is blocked. Go back a move' + (canAdd ? ', or use the extra bolt (it costs a star)' : '') + '.</p>', btns);
+  const head = why === 'dead' ? 'Dead end' : 'No moves left';
+  const msg = why === 'dead' ? 'There are still moves, but none of them lead to a finish.' : 'Every bolt is blocked.';
+  const tip = way ? ' Going back ' + way.back + (way.back === 1 ? ' move' : ' moves') + ' puts you where it can still be solved' : ' Go back a move';
+  modal(head, '<p>' + msg + tip + (canAdd ? ', or use the extra bolt (it costs a star)' : '') + '.</p>', btns);
   for (const b of $('mBtns').children) b.style.marginBottom = '10px';
 }
-function undo() {
+function undo(count) {
   if (!G || G.won || !G.hist.length) return;
+  closeModal();
   if (G.sel >= 0) { const b = G.bolts[G.sel]; b.nuts[b.nuts.length - 1].lifted = false; G.sel = -1; }
-  const snap = G.hist.pop();
+  const n = clamp(count || 1, 1, G.hist.length);
+  let snap;
+  for (let i = 0; i < n; i++) snap = G.hist.pop();
   G.bolts.forEach((b, i) => { b.nuts = snap[i] ? snap[i].slice() : []; });
   G.moves++; G.hint = null; G.plan = null; refreshDone();
   const now = performance.now();
@@ -858,7 +890,7 @@ function hint() {
   if (G.sel >= 0) dropNut();
   if (!G.plan || !G.plan.length) G.plan = bestPath(colsOf(), capsOf(), G.N, 150000) || solve(colsOf(), capsOf(), G.N, 150000);
   const sol = G.plan;
-  if (!sol || !sol.length) { toast('No way through from here. Try Undo, or add the extra bolt.'); sfx.bad(); return; }
+  if (!sol || !sol.length) { G.plan = null; toast('Looking for a way back…', 1200); setTimeout(() => { if (G && !G.won) stuck('dead'); }, 60); return; }
   G.usedHint = true; G.hint = { a: sol[0][0], b: sol[0][1], t: performance.now() };
   sfx.hint();
 }
@@ -905,7 +937,7 @@ $('winNext').onclick = () => { gen++; $('win').classList.remove('on'); if (G.dai
 $('winMenu').onclick = () => { gen++; $('win').classList.remove('on'); curTier = G.t; renderLevels(); show('levels'); };
 $('gBack').onclick = () => { sfx.ui(); gen++; closeModal(); $('tip').classList.remove('on'); if (G.daily || G.L === 0) { renderHome(); show('home'); } else { curTier = G.t; renderLevels(); show('levels'); } };
 $('gRestart').onclick = () => { if (!G || G.won) return; gen++; closeModal(); if (G.tut) { startTutorial(G.tut.after); return; } dealOut(); hud(); sfx.ui(); };
-$('undoBtn').onclick = undo; $('hintBtn').onclick = hint; $('addBtn').onclick = addBolt;
+$('undoBtn').onclick = () => undo(1); $('hintBtn').onclick = hint; $('addBtn').onclick = addBolt;
 
 cv.addEventListener('pointerdown', e => {
   e.preventDefault(); audio();
